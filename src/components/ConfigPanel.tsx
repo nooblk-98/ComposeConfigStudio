@@ -198,13 +198,16 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
             <div className="space-y-3">
               {Object.entries(app.volumes).map(([key, volume]) => (
                 <div key={key} className="flex items-start p-4 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-                <input
-                  type="checkbox"
-                  id={`volume-${key}`}
-                  checked={config.volumes[key] || false}
-                  onChange={(e) => updateVolume(key, e.target.checked)}
-                  className="mt-1 mr-3 w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                />
+                <label className="relative inline-flex items-center cursor-pointer mr-3 mt-1">
+                  <input
+                    type="checkbox"
+                    id={`volume-${key}`}
+                    checked={config.volumes[key] || false}
+                    onChange={(e) => updateVolume(key, e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
                 <div className="flex-1">
                   <label htmlFor={`volume-${key}`} className="font-medium cursor-pointer text-gray-900">
                     {key.charAt(0).toUpperCase() + key.slice(1)} volume
@@ -269,6 +272,65 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
                 <span>🔧</span> Environment Variables
               </h3>
               <div className="grid grid-cols-2 gap-6">
+                {/* Admin fields if applicable */}
+                {(app.env.SEMAPHORE_ADMIN || app.env.NEXTCLOUD_ADMIN_USER || app.env.WORDPRESS_DB_USER || app.env.GF_SECURITY_ADMIN_USER) && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-900 mb-2">
+                        Admin Login
+                      </label>
+                      <input
+                        type="text"
+                        value={config.adminLogin}
+                        onChange={(e) => updateConfig({ adminLogin: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-gray-900 placeholder-gray-400"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Admin username</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-900 mb-2">
+                        Admin Password
+                      </label>
+                      <input
+                        type="password"
+                        value={config.adminPassword}
+                        onChange={(e) => updateConfig({ adminPassword: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-gray-900 placeholder-gray-400"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Admin password</p>
+                    </div>
+                    {app.env.SEMAPHORE_ADMIN_NAME && (
+                      <div>
+                        <label className="block text-sm font-bold text-gray-900 mb-2">
+                          Admin Name
+                        </label>
+                        <input
+                          type="text"
+                          value={config.adminName}
+                          onChange={(e) => updateConfig({ adminName: e.target.value })}
+                          className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-gray-900 placeholder-gray-400"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Admin display name</p>
+                      </div>
+                    )}
+                    {(app.env.SEMAPHORE_ADMIN_EMAIL || app.env.NEXTCLOUD_ADMIN_EMAIL) && (
+                      <div>
+                        <label className="block text-sm font-bold text-gray-900 mb-2">
+                          Admin Email
+                        </label>
+                        <input
+                          type="email"
+                          value={config.adminEmail}
+                          onChange={(e) => updateConfig({ adminEmail: e.target.value })}
+                          className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-gray-900 placeholder-gray-400"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Admin email address</p>
+                      </div>
+                    )}
+                  </>
+                )}
+                
+                {/* Other environment variables */}
                 {Object.entries(app.env).map(([key, envVar]) => {
                   const isPassword = key.toLowerCase().includes('password') || key.toLowerCase().includes('secret');
                   
@@ -431,18 +493,21 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
                 return (
                   <div key={service.id} className={`p-4 rounded-xl border transition-all ${isAttached ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-white hover:bg-gray-50 border-gray-200'}`}>
                     <div className="flex items-start">
-                      <input
-                        type="checkbox"
-                        id={`service-${service.id}`}
-                        checked={isAttached}
-                        onChange={(e) => {
-                          const newServices = e.target.checked
-                            ? [...config.attachedServices, service.id]
-                            : config.attachedServices.filter(id => id !== service.id);
-                          updateConfig({ attachedServices: newServices });
-                        }}
-                        className="mt-1 mr-3 w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                      />
+                      <label className="relative inline-flex items-center cursor-pointer mr-3 mt-1">
+                        <input
+                          type="checkbox"
+                          id={`service-${service.id}`}
+                          checked={isAttached}
+                          onChange={(e) => {
+                            const newServices = e.target.checked
+                              ? [...config.attachedServices, service.id]
+                              : config.attachedServices.filter(id => id !== service.id);
+                            updateConfig({ attachedServices: newServices });
+                          }}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                      </label>
                       <div className="flex-1">
                         <label htmlFor={`service-${service.id}`} className="font-bold cursor-pointer text-gray-900 block text-base">
                           {service.name}
@@ -522,62 +587,7 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
           </section>
         )}
 
-        {/* Admin User - Only show if app has admin-related env vars */}
-        {(app.env.SEMAPHORE_ADMIN || app.env.NEXTCLOUD_ADMIN_USER || app.env.WORDPRESS_DB_USER || app.env.GF_SECURITY_ADMIN_USER) && (
-          <section className="bg-white shadow-sm border border-gray-200 rounded-xl p-6 mb-6 transition-all hover:shadow-md">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">Admin user</h2>
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Login
-                </label>
-                <input
-                  type="text"
-                  value={config.adminLogin}
-                  onChange={(e) => updateConfig({ adminLogin: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-900 placeholder-gray-400"
-                />
-              </div>
-              {app.env.SEMAPHORE_ADMIN_NAME && (
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    value={config.adminName}
-                    onChange={(e) => updateConfig({ adminName: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-900 placeholder-gray-400"
-                  />
-                </div>
-              )}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={config.adminPassword}
-                  onChange={(e) => updateConfig({ adminPassword: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-900 placeholder-gray-400"
-                />
-              </div>
-              {(app.env.SEMAPHORE_ADMIN_EMAIL || app.env.NEXTCLOUD_ADMIN_EMAIL) && (
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={config.adminEmail}
-                    onChange={(e) => updateConfig({ adminEmail: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-900 placeholder-gray-400"
-                  />
-                </div>
-              )}
-            </div>
-          </section>
-        )}
+
 
         {/* Runner */}
         {app.features.runner && (
