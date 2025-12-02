@@ -38,6 +38,7 @@ export interface ServiceDefinition {
   group?: string; // Optional grouping key (e.g., "database") for mutually exclusive service options
   selectorLabel?: string; // Optional label to show in group selectors
   mandatory: boolean; // Whether this service is required
+  defaultEnabled?: boolean; // Whether this optional service should be enabled by default
   images: string[]; // Available Docker images (e.g., ["wordpress:php8.2-apache", "wordpress:php8.3-apache"])
   defaultImage: string; // Default image to use
   containerName?: string; // Container name template

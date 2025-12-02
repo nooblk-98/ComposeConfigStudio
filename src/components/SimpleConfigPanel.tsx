@@ -64,7 +64,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
       const inGroup = service.group;
       const shouldEnable = inGroup
         ? !firstInGroup[inGroup]
-        : service.mandatory;
+        : (service.mandatory || service.defaultEnabled === true);
       if (inGroup && !firstInGroup[inGroup]) {
         firstInGroup[inGroup] = true;
       }
@@ -316,7 +316,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
   // Network configuration
   const [networkConfig, setNetworkConfig] = useState({
     enabled: true,
-    name: `${app.id}_network`,
+    name: app.networks && app.networks.length > 0 ? app.networks[0] : `${app.id}_network`,
     driver: 'bridge',
     ipam: {
       driver: 'default',

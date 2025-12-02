@@ -42,7 +42,8 @@ export default {
     },
     {
       name: "postgres",
-      mandatory: true,
+      mandatory: false,
+      defaultEnabled: true,
       images: [
         "postgres:latest",
         "postgres:16",
@@ -62,5 +63,6 @@ export default {
     }
   ],
 
+  networks: ["nginx"],
   namedVolumes: []
 };

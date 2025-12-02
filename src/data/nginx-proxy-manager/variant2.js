@@ -24,10 +24,10 @@ export default {
       ports: ["80:80", "81:81", "443:443"],
       environment: {
         TZ: "UTC",
-        DB_MYSQL_HOST: "mariadb",
+        DB_MYSQL_HOST: "mariadb", 
         DB_MYSQL_USER: "dbuser",
         DB_MYSQL_PASSWORD: "user@123+",
-        DB_MYSQL_NAME: "nginxproxymanager"
+        DB_MYSQL_NAME: "database"
       },
       optionalEnv: [
         { key: "DB_MYSQL_PORT", defaultValue: "", description: "Change Only When Use Without default Port", category: "Network" },
@@ -41,6 +41,7 @@ export default {
     {
       name: "mariadb",
       mandatory: false,
+      defaultEnabled: true,
       images: [
         "mariadb:latest",
         "mariadb:11",
@@ -62,5 +63,6 @@ export default {
     }
   ],
 
+  networks: ["nginx"],
   namedVolumes: []
 };
