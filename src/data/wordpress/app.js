@@ -12,6 +12,11 @@ export default {
     { name: "Apache", version: "2.4" }
   ],
 
+  optionalEnv: [
+    { key: "WORDPRESS_TABLE_PREFIX", defaultValue: "wp_", description: "Database table prefix", category: "Database" },
+    { key: "WORDPRESS_DEBUG", defaultValue: "0", description: "Enable debug mode (1/0)", category: "Development" }
+  ],
+
   services: [
     {
       name: "wordpress",

@@ -467,10 +467,10 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                         <div className="space-y-4">
                           {Object.keys(config.environment).length > 0 && (
                           <div className="rounded-xl border border-slate-200 bg-white p-4">
-                            <div className="mb-3 flex items-center justify-between">
-                              <span className="text-base font-semibold text-slate-900">Environment variables</span>
-                              <button
-                                type="button"
+                              <div className="mb-3 flex items-center justify-between">
+                                <span className="text-base font-semibold text-slate-900">Environment variables</span>
+                                <button
+                                  type="button"
                                   onClick={() => {
                                     const index = Object.keys(config.environment).length + 1;
                                     updateServiceConfig(service.name, {
@@ -482,20 +482,21 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                   + Add
                                 </button>
                               </div>
-                              <div className="space-y-3">
+                              <div className="space-y-4">
                                 {Object.entries(config.environment).map(([key, value]) => (
-                                  <div key={key} className="grid grid-cols-[1.1fr_1fr_auto] gap-3 items-center">
-                                    <div className="flex">
-                                      {defaultsRef.current[service.name]?.envKeys.has(key) ? (
-                                        <span className="inline-flex h-11 min-w-0 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-mono text-slate-900 shadow-sm" title={key}>{key}</span>
-                                      ) : (
-                                        <input
-                                          type="text"
-                                          value={key}
-                                          onChange={(e) => renameEnvKey(service.name, key, e.target.value)}
-                                          className="w-full h-11 rounded-lg border border-slate-200 bg-white px-2 text-sm font-mono text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                          placeholder="ENV_NAME"
-                                        />
+                                  <div key={key} className="space-y-1">
+                                    <div className="flex items-center justify-between gap-3">
+                                      <span className="text-xs font-mono tracking-wide text-slate-800">{key}</span>
+                                      {defaultsRef.current[service.name]?.envKeys.has(key) ? null : (
+                                        <button
+                                          type="button"
+                                          onClick={() => removeEnv(service.name, key)}
+                                          className="text-xs text-red-500 hover:text-red-600"
+                                          title="Remove variable"
+                                          aria-label="Remove variable"
+                                        >
+                                          Remove
+                                        </button>
                                       )}
                                     </div>
                                     <div className="relative">
@@ -531,20 +532,6 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                         </button>
                                       )}
                                     </div>
-                                    {defaultsRef.current[service.name]?.envKeys.has(key) ? null : (
-                                      <button
-                                        type="button"
-                                        onClick={() => removeEnv(service.name, key)}
-                                        className="h-11 w-11 flex items-center justify-center rounded-md border border-slate-200 text-red-500 hover:bg-red-50 hover:border-red-200"
-                                        title="Remove variable"
-                                        aria-label="Remove variable"
-                                      >
-                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                          <path d="M9 3h6a1 1 0 0 1 .99.86L16 5h4a1 1 0 1 1 0 2h-.99l-.8 12.06A2 2 0 0 1 16.21 21H7.8a2 2 0 0 1-1.99-1.94L5 7H4a1 1 0 0 1 0-2h4l.01-1.14A1 1 0 0 1 9 3Zm6.01 4H8.99l-.7 12h7.42l.3-12Z" />
-                                          <path d="M10 10a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
-                                        </svg>
-                                      </button>
-                                    )}
                                   </div>
                                 ))}
                               </div>
@@ -557,12 +544,12 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                 <span className="text-base font-semibold text-slate-900">Optional environment variables</span>
                                 <p className="text-sm text-slate-500">Only included when a value is provided.</p>
                               </div>
-                              <div className="space-y-3">
+                              <div className="space-y-4">
                                 {app.optionalEnv.map(opt => (
-                                  <div key={opt.key} className="grid grid-cols-1 gap-2">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-sm font-mono text-slate-800">{opt.key}</span>
-                                      {opt.description && <span className="text-xs text-slate-500">{opt.description}</span>}
+                                  <div key={opt.key} className="space-y-1">
+                                    <div className="flex items-center justify-between gap-3">
+                                      <span className="text-xs font-mono tracking-wide text-slate-800">{opt.key}</span>
+                                      {opt.description && <span className="text-xs text-slate-500 text-right">{opt.description}</span>}
                                     </div>
                                     <input
                                       type={opt.key.toLowerCase().includes('password') ? 'password' : 'text'}
