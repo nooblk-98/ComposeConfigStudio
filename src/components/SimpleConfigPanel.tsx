@@ -15,11 +15,25 @@ interface ServiceConfig {
   environment: Record<string, string>;
   ports: string[];
   volumes: string[];
+  resourceLimits: {
+    enabled: boolean;
+    memory: string;
+    cpus: string;
+  };
+  volumesEnabled: boolean;
 }
 
 const DOCKER_ICON = 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-plain.svg';
 
 export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProps) {
+  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [optionalEnvValues, setOptionalEnvValues] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    app.optionalEnv?.forEach(opt => {
+      initial[opt.key] = opt.defaultValue || '';
+    });
+    return initial;
+  });
   const getServiceIcon = () => DOCKER_ICON;
 
   // Track default values to prevent removing predefined entries
@@ -43,7 +57,13 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
         containerName: service.containerName,
         environment: { ...service.environment },
         ports: [...(service.ports || [])],
-        volumes: [...(service.volumes || [])]
+        volumes: [...(service.volumes || [])],
+        volumesEnabled: true,
+        resourceLimits: {
+          enabled: false,
+          memory: '',
+          cpus: ''
+        }
       };
     });
 
@@ -163,15 +183,33 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
         }
       });
 
+      if (config.resourceLimits.enabled) {
+        if (config.resourceLimits.memory.trim()) {
+          cmd += ` --memory ${config.resourceLimits.memory.trim()}`;
+        }
+        if (config.resourceLimits.cpus.trim()) {
+          cmd += ` --cpus ${config.resourceLimits.cpus.trim()}`;
+        }
+      }
+
       Object.entries(config.environment).forEach(([key, value]) => {
         if (key) {
           cmd += ` -e ${key}=${value}`;
         }
       });
+      const primaryService = enabledServices[0];
+      if (service.name === app.id || service.name === primaryService?.name) {
+        app.optionalEnv?.forEach(opt => {
+          const val = optionalEnvValues[opt.key]?.trim();
+          if (val) {
+            cmd += ` -e ${opt.key}=${val}`;
+          }
+        });
+      }
 
       config.volumes.forEach(vol => {
         const trimmed = vol.trim();
-        if (trimmed) {
+        if (trimmed && config.volumesEnabled) {
           cmd += ` -v ${trimmed}`;
         }
       });
@@ -207,11 +245,34 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
         envKeys.forEach(key => {
           yaml += `      ${key}: ${config.environment[key]}\n`;
         });
+        const primaryService = enabledServices[0];
+        if (service.name === app.id || service.name === primaryService?.name) {
+          app.optionalEnv?.forEach(opt => {
+            const val = optionalEnvValues[opt.key]?.trim();
+            if (val) {
+              yaml += `      ${opt.key}: ${val}\n`;
+            }
+          });
+        }
       }
 
       if (config.volumes.length > 0) {
-        yaml += `    volumes:\n`;
-        config.volumes.forEach(vol => yaml += `      - ${vol}\n`);
+        if (config.volumesEnabled) {
+          yaml += `    volumes:\n`;
+          config.volumes.forEach(vol => yaml += `      - ${vol}\n`);
+        }
+      }
+
+      if (config.resourceLimits.enabled && (config.resourceLimits.memory || config.resourceLimits.cpus)) {
+        yaml += `    deploy:\n`;
+        yaml += `      resources:\n`;
+        yaml += `        limits:\n`;
+        if (config.resourceLimits.cpus) {
+          yaml += `          cpus: '${config.resourceLimits.cpus}'\n`;
+        }
+        if (config.resourceLimits.memory) {
+          yaml += `          memory: ${config.resourceLimits.memory}\n`;
+        }
       }
 
       if (service.dependsOn && service.dependsOn.length > 0) {
@@ -405,11 +466,11 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
 
                         <div className="space-y-4">
                           {Object.keys(config.environment).length > 0 && (
-                            <div className="rounded-xl border border-slate-200 bg-white p-4">
-                              <div className="mb-3 flex items-center justify-between">
-                                <span className="text-base font-semibold text-slate-900">Environment variables</span>
-                                <button
-                                  type="button"
+                          <div className="rounded-xl border border-slate-200 bg-white p-4">
+                            <div className="mb-3 flex items-center justify-between">
+                              <span className="text-base font-semibold text-slate-900">Environment variables</span>
+                              <button
+                                type="button"
                                   onClick={() => {
                                     const index = Object.keys(config.environment).length + 1;
                                     updateServiceConfig(service.name, {
@@ -426,7 +487,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                   <div key={key} className="grid grid-cols-[1.1fr_1fr_auto] gap-3 items-center">
                                     <div className="flex">
                                       {defaultsRef.current[service.name]?.envKeys.has(key) ? (
-                                        <span className="inline-flex h-11 min-w-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-mono text-slate-800" title={key}>{key}</span>
+                                        <span className="inline-flex h-11 min-w-0 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-mono text-slate-900 shadow-sm" title={key}>{key}</span>
                                       ) : (
                                         <input
                                           type="text"
@@ -437,12 +498,39 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                         />
                                       )}
                                     </div>
-                                    <input
-                                      type={key.toLowerCase().includes('password') ? 'password' : 'text'}
-                                      value={value}
-                                      onChange={(e) => updateEnv(service.name, key, e.target.value)}
-                                      className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                    />
+                                    <div className="relative">
+                                      <input
+                                        type={key.toLowerCase().includes('password') && !showPasswords[`${service.name}_${key}`] ? 'password' : 'text'}
+                                        value={value}
+                                        onChange={(e) => updateEnv(service.name, key, e.target.value)}
+                                        className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                      />
+                                      {key.toLowerCase().includes('password') && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setShowPasswords(prev => ({
+                                            ...prev,
+                                            [`${service.name}_${key}`]: !prev[`${service.name}_${key}`]
+                                          }))}
+                                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                                          title={showPasswords[`${service.name}_${key}`] ? 'Hide password' : 'Show password'}
+                                          aria-label={showPasswords[`${service.name}_${key}`] ? 'Hide password' : 'Show password'}
+                                        >
+                                          {showPasswords[`${service.name}_${key}`] ? (
+                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                              <path d="M17.94 17.94 6.06 6.06" />
+                                              <path d="M10.58 10.58a2 2 0 1 0 2.83 2.83" />
+                                              <path d="M9.88 4.24a10.07 10.07 0 0 1 12.18 7.76 10.05 10.05 0 0 1-3.16 5.05M6.19 6.19A10.06 10.06 0 0 0 1.93 12a10.05 10.05 0 0 0 11 6.9" />
+                                            </svg>
+                                          ) : (
+                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+                                              <circle cx="12" cy="12" r="3" />
+                                            </svg>
+                                          )}
+                                        </button>
+                                      )}
+                                    </div>
                                     {defaultsRef.current[service.name]?.envKeys.has(key) ? null : (
                                       <button
                                         type="button"
@@ -457,6 +545,32 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                         </svg>
                                       </button>
                                     )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {app.optionalEnv && app.optionalEnv.length > 0 && (
+                            <div className="rounded-xl border border-slate-200 bg-white p-4">
+                              <div className="mb-3">
+                                <span className="text-base font-semibold text-slate-900">Optional environment variables</span>
+                                <p className="text-sm text-slate-500">Only included when a value is provided.</p>
+                              </div>
+                              <div className="space-y-3">
+                                {app.optionalEnv.map(opt => (
+                                  <div key={opt.key} className="grid grid-cols-1 gap-2">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm font-mono text-slate-800">{opt.key}</span>
+                                      {opt.description && <span className="text-xs text-slate-500">{opt.description}</span>}
+                                    </div>
+                                    <input
+                                      type={opt.key.toLowerCase().includes('password') ? 'password' : 'text'}
+                                      value={optionalEnvValues[opt.key] ?? ''}
+                                      onChange={(e) => setOptionalEnvValues(prev => ({ ...prev, [opt.key]: e.target.value }))}
+                                      className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                      placeholder={opt.defaultValue || 'Enter value'}
+                                    />
                                   </div>
                                 ))}
                               </div>
@@ -534,15 +648,28 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                           {config.volumes.length > 0 && (
                             <div className="rounded-xl border border-slate-200 bg-white p-4">
                               <div className="mb-3 flex items-center justify-between">
-                                <span className="text-base font-semibold text-slate-900">Volumes</span>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-base font-semibold text-slate-900">Volumes</span>
+                                  <label className="relative inline-flex cursor-pointer items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={config.volumesEnabled}
+                                      onChange={(e) => updateServiceConfig(service.name, { volumesEnabled: e.target.checked })}
+                                      className="peer sr-only"
+                                    />
+                                    <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
+                                  </label>
+                                </div>
                                 <button
                                   type="button"
                                   onClick={() => updateServiceConfig(service.name, { volumes: [...config.volumes, ''] })}
-                                  className="text-sm font-semibold text-purple-700 hover:text-purple-900"
+                                  className={`text-sm font-semibold ${config.volumesEnabled ? 'text-purple-700 hover:text-purple-900' : 'text-slate-400 cursor-not-allowed'}`}
+                                  disabled={!config.volumesEnabled}
                                 >
                                   + Add
                                 </button>
                               </div>
+                              {config.volumesEnabled && (
                               <div className="space-y-2">
                                 {config.volumes.map((vol, idx) => {
                                   const [hostPath, containerPath] = vol.split(':');
@@ -596,8 +723,54 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                   );
                                 })}
                               </div>
+                              )}
+                              {!config.volumesEnabled && (
+                                <p className="text-sm text-slate-500">Volumes are disabled for this service.</p>
+                              )}
                             </div>
                           )}
+
+                          <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className="text-base font-semibold text-slate-900">Resource limits</span>
+                                <p className="text-sm text-slate-500">Optional CPU/Memory caps for this container.</p>
+                              </div>
+                              <label className="relative inline-flex cursor-pointer items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={config.resourceLimits.enabled}
+                                  onChange={(e) => updateServiceConfig(service.name, { resourceLimits: { ...config.resourceLimits, enabled: e.target.checked } })}
+                                  className="peer sr-only"
+                                />
+                                <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
+                              </label>
+                            </div>
+                            {config.resourceLimits.enabled && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                  <label className="block text-sm font-semibold text-slate-800">Memory</label>
+                                  <input
+                                    type="text"
+                                    value={config.resourceLimits.memory}
+                                    onChange={(e) => updateServiceConfig(service.name, { resourceLimits: { ...config.resourceLimits, memory: e.target.value } })}
+                                    className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                    placeholder="512m or 1g"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="block text-sm font-semibold text-slate-800">CPUs</label>
+                                  <input
+                                    type="text"
+                                    value={config.resourceLimits.cpus}
+                                    onChange={(e) => updateServiceConfig(service.name, { resourceLimits: { ...config.resourceLimits, cpus: e.target.value } })}
+                                    className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                    placeholder="0.5 or 2"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
