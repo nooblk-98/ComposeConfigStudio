@@ -20,7 +20,6 @@ export default {
         "wordpress:php8.2-apache",
         "wordpress:php8.3-apache",
         "wordpress:php8.4-apache",
-        "wordpress:latest"
       ],
       defaultImage: "wordpress:php8.2-apache",
       containerName: "wordpress",

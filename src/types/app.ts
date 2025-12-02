@@ -33,6 +33,7 @@ export interface AttachableService {
 export interface ServiceDefinition {
   name: string; // Service name (e.g., "wordpress", "db", "phpmyadmin")
   displayName?: string; // Display name in UI (e.g., "Database")
+  icon?: string; // Optional icon URL for the service (e.g., devicon)
   mandatory: boolean; // Whether this service is required
   images: string[]; // Available Docker images (e.g., ["wordpress:php8.2-apache", "wordpress:php8.3-apache"])
   defaultImage: string; // Default image to use

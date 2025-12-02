@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { AppDefinition } from '@/types/app';
 
 interface SimpleConfigPanelProps {
@@ -17,12 +17,26 @@ interface ServiceConfig {
   volumes: string[];
 }
 
+const DOCKER_ICON = 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-plain.svg';
+
 export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProps) {
+  const getServiceIcon = () => DOCKER_ICON;
+
+  // Track default values to prevent removing predefined entries
+  const defaultsRef = useRef<Record<string, { envKeys: Set<string>; ports: number; volumes: number }>>({});
+
   // Initialize service configs
   const [serviceConfigs, setServiceConfigs] = useState<Record<string, ServiceConfig>>(() => {
     const configs: Record<string, ServiceConfig> = {};
 
     app.services?.forEach(service => {
+      if (!defaultsRef.current[service.name]) {
+        defaultsRef.current[service.name] = {
+          envKeys: new Set(Object.keys(service.environment || {})),
+          ports: service.ports?.length || 0,
+          volumes: service.volumes?.length || 0
+        };
+      }
       configs[service.name] = {
         enabled: service.mandatory,
         selectedImage: service.defaultImage,
@@ -53,8 +67,62 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
     }));
   };
 
+  const renameEnvKey = (serviceName: string, oldKey: string, newKey: string) => {
+    if (!newKey || newKey === oldKey) return;
+
+    setServiceConfigs(prev => {
+      const env = prev[serviceName].environment;
+      // Avoid overwriting an existing key
+      if (Object.prototype.hasOwnProperty.call(env, newKey)) {
+        return prev;
+      }
+      const { [oldKey]: value, ...rest } = env;
+      return {
+        ...prev,
+        [serviceName]: {
+          ...prev[serviceName],
+          environment: { ...rest, [newKey]: value }
+        }
+      };
+    });
+  };
+
+  const removeEnv = (serviceName: string, key: string) => {
+    setServiceConfigs(prev => {
+      const { [key]: _removed, ...rest } = prev[serviceName].environment;
+      return {
+        ...prev,
+        [serviceName]: {
+          ...prev[serviceName],
+          environment: rest
+        }
+      };
+    });
+  };
+
+  const removePort = (serviceName: string, index: number) => {
+    setServiceConfigs(prev => {
+      const updated = [...prev[serviceName].ports];
+      updated.splice(index, 1);
+      return {
+        ...prev,
+        [serviceName]: { ...prev[serviceName], ports: updated }
+      };
+    });
+  };
+
+  const removeVolume = (serviceName: string, index: number) => {
+    setServiceConfigs(prev => {
+      const updated = [...prev[serviceName].volumes];
+      updated.splice(index, 1);
+      return {
+        ...prev,
+        [serviceName]: { ...prev[serviceName], volumes: updated }
+      };
+    });
+  };
+
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'command' | 'compose'>('command');
 
   // Network configuration
   const [networkConfig, setNetworkConfig] = useState({
@@ -198,59 +266,58 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-950">
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 opacity-90" aria-hidden />
+    <div className="relative min-h-screen bg-slate-50">
       <div className="relative max-w-7xl mx-auto px-6 py-8 space-y-6">
-        <div className="flex items-center gap-3 text-slate-200">
+        <div className="flex items-center gap-3 text-slate-800">
           <button
             onClick={onBack}
-            className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-sm font-medium text-slate-100 hover:bg-white/10 transition"
+            className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-base font-medium text-slate-800 border border-slate-200 hover:bg-slate-100 transition"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             Back to apps
           </button>
-          <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Configure &amp; launch</span>
+          <span className="text-sm uppercase tracking-[0.2em] text-slate-500">Configure &amp; launch</span>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex items-center gap-3">
                     {app.logo && (
-                      <div className="h-12 w-12 overflow-hidden rounded-xl bg-white/10 border border-white/10">
+                      <div className="h-12 w-12 overflow-hidden rounded-xl bg-slate-100 border border-slate-200">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={app.logo} alt={app.name} className="h-full w-full object-cover" />
                       </div>
                     )}
                     <div>
-                      <h1 className="text-2xl font-semibold text-white">{app.name}</h1>
-                      <p className="text-sm text-slate-300">{app.description}</p>
+                      <h1 className="text-2xl font-semibold text-slate-900">{app.name}</h1>
+                      <p className="text-base text-slate-600">{app.description}</p>
                     </div>
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-300">
-                    <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-emerald-200 border border-emerald-400/30">
+                  <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-600">
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 border border-emerald-200">
                       {app.category}
                     </span>
-                    <span className="rounded-full bg-blue-400/10 px-3 py-1 text-blue-200 border border-blue-400/30">v{app.version}</span>
+                    <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700 border border-blue-200">v{app.version}</span>
                     {app.defaultPort && (
-                      <span className="rounded-full bg-purple-400/10 px-3 py-1 text-purple-100 border border-purple-400/30">Default port {app.defaultPort}</span>
+                      <span className="rounded-full bg-purple-50 px-3 py-1 text-purple-700 border border-purple-200">Default port {app.defaultPort}</span>
                     )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:w-64">
-                  <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-left">
-                    <p className="text-[11px] uppercase tracking-wide text-slate-400">Services</p>
-                    <p className="text-xl font-semibold text-white">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-left">
+                    <p className="text-sm uppercase tracking-wide text-slate-500">Services</p>
+                    <p className="text-xl font-semibold text-slate-900">
                       {Object.values(serviceConfigs).filter(cfg => cfg.enabled).length}/{app.services?.length || 0}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-left">
-                    <p className="text-[11px] uppercase tracking-wide text-slate-400">Network</p>
-                    <p className="text-sm font-medium text-white truncate">{networkConfig.enabled ? networkConfig.name : 'Disabled'}</p>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-left">
+                    <p className="text-sm uppercase tracking-wide text-slate-500">Network</p>
+                    <p className="text-base font-medium text-slate-900 truncate">{networkConfig.enabled ? networkConfig.name : 'Disabled'}</p>
                   </div>
                 </div>
               </div>
@@ -260,25 +327,39 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
               {app.services?.map((service) => {
                 const config = serviceConfigs[service.name];
                 if (!config) return null;
+                const iconUrl = getServiceIcon(service);
 
                 return (
-                  <div key={service.name} className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 px-5 py-4">
+                  <div key={service.name} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
                       <div>
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500/40 to-indigo-500/40 border border-white/10" />
+                          <div className="h-10 w-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden">
+                            {iconUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={iconUrl}
+                                alt={`${service.displayName || service.name} logo`}
+                                className="h-8 w-8 object-contain"
+                              />
+                            ) : (
+                              <span className="text-sm font-semibold text-slate-800">
+                                {(service.displayName || service.name).charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
                           <div>
-                            <h2 className="text-lg font-semibold text-white capitalize">{service.displayName || service.name}</h2>
-                            <p className="text-xs text-slate-300 font-mono">{service.containerName}</p>
+                            <h2 className="text-lg font-semibold text-slate-900 capitalize">{service.displayName || service.name}</h2>
+                            <p className="text-sm text-slate-500 font-mono">{service.containerName}</p>
                           </div>
                           {service.mandatory && (
-                            <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-semibold text-blue-100 border border-blue-400/30">
+                            <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700 border border-blue-200">
                               Required
                             </span>
                           )}
                         </div>
                         {service.description && (
-                          <p className="mt-2 text-xs text-slate-300">{service.description}</p>
+                          <p className="mt-2 text-sm text-slate-600">{service.description}</p>
                         )}
                       </div>
 
@@ -290,40 +371,40 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                             onChange={(e) => updateServiceConfig(service.name, { enabled: e.target.checked })}
                             className="peer sr-only"
                           />
-                          <div className="h-7 w-14 rounded-full bg-white/10 border border-white/10 transition peer-checked:bg-purple-500 peer-focus:ring-2 peer-focus:ring-purple-300/50 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-lg after:transition peer-checked:after:translate-x-6" />
+                          <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
                         </label>
                       )}
                     </div>
 
                     {config.enabled && (
-                      <div className="grid gap-5 px-5 py-5 lg:grid-cols-2">
+                      <div className="grid gap-4 px-5 py-5 lg:grid-cols-[1.05fr_1.4fr] bg-slate-50">
                         <div className="space-y-3">
-                          <label className="block text-sm font-semibold text-white">Container name</label>
+                          <label className="block text-base font-semibold text-slate-900">Container name</label>
                           <input
                             type="text"
                             value={config.containerName}
                             onChange={(e) => updateServiceConfig(service.name, { containerName: e.target.value })}
-                            className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                             placeholder={service.containerName}
                           />
 
-                          <label className="block text-sm font-semibold text-white">Docker image</label>
+                          <label className="block text-base font-semibold text-slate-900">Docker image</label>
                           <select
                             value={config.selectedImage}
                             onChange={(e) => updateServiceConfig(service.name, { selectedImage: e.target.value })}
-                            className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                           >
                             {service.images.map(img => (
-                              <option key={img} value={img} className="bg-slate-900 text-white">{img}</option>
+                              <option key={img} value={img} className="bg-white text-slate-900">{img}</option>
                             ))}
                           </select>
                         </div>
 
                         <div className="space-y-4">
                           {Object.keys(config.environment).length > 0 && (
-                            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                            <div className="rounded-xl border border-slate-200 bg-white p-4">
                               <div className="mb-3 flex items-center justify-between">
-                                <span className="text-sm font-semibold text-white">Environment variables</span>
+                                <span className="text-base font-semibold text-slate-900">Environment variables</span>
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -332,21 +413,51 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                       environment: { ...config.environment, [`NEW_VAR_${index}`]: '' }
                                     });
                                   }}
-                                  className="text-xs font-semibold text-purple-200 hover:text-white"
+                                  className="text-sm font-semibold text-purple-700 hover:text-purple-900"
                                 >
                                   + Add
                                 </button>
                               </div>
                               <div className="space-y-2">
                                 {Object.entries(config.environment).map(([key, value]) => (
-                                  <div key={key} className="grid grid-cols-3 gap-3 items-center">
-                                    <span className="truncate text-xs font-mono text-slate-200" title={key}>{key}</span>
-                                    <input
-                                      type={key.toLowerCase().includes('password') ? 'password' : 'text'}
-                                      value={value}
-                                      onChange={(e) => updateEnv(service.name, key, e.target.value)}
-                                      className="col-span-2 rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                    />
+                                  <div key={key} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 items-center">
+                                    <div className="flex">
+                                      {defaultsRef.current[service.name]?.envKeys.has(key) ? (
+                                        <span className="inline-flex h-11 min-w-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-mono text-slate-800" title={key}>{key}</span>
+                                      ) : (
+                                        <input
+                                          type="text"
+                                          value={key}
+                                          onChange={(e) => renameEnvKey(service.name, key, e.target.value)}
+                                          className="w-full h-11 rounded-lg border border-slate-200 bg-white px-2 text-sm font-mono text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                          placeholder="ENV_NAME"
+                                        />
+                                      )}
+                                    </div>
+                                    <div className="flex">
+                                      <input
+                                        type={key.toLowerCase().includes('password') ? 'password' : 'text'}
+                                        value={value}
+                                        onChange={(e) => updateEnv(service.name, key, e.target.value)}
+                                        className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                      />
+                                    </div>
+                                    {defaultsRef.current[service.name]?.envKeys.has(key) ? null : (
+                                      <div className="flex items-center justify-center h-11">
+                                        <button
+                                          type="button"
+                                          onClick={() => removeEnv(service.name, key)}
+                                          className="h-10 w-10 flex items-center justify-center rounded-md border border-slate-200 text-red-500 hover:bg-red-50 hover:border-red-200"
+                                          title="Remove variable"
+                                          aria-label="Remove variable"
+                                        >
+                                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                            <path d="M9 3h6a1 1 0 0 1 .99.86L16 5h4a1 1 0 1 1 0 2h-.99l-.8 12.06A2 2 0 0 1 16.21 21H7.8a2 2 0 0 1-1.99-1.94L5 7H4a1 1 0 0 1 0-2h4l.01-1.14A1 1 0 0 1 9 3Zm6.01 4H8.99l-.7 12h7.42l.3-12Z" />
+                                            <path d="M10 10a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>
@@ -354,24 +465,24 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                           )}
 
                           {config.ports.length > 0 && (
-                            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                            <div className="rounded-xl border border-slate-200 bg-white p-4">
                               <div className="mb-3 flex items-center justify-between">
-                                <span className="text-sm font-semibold text-white">Ports</span>
+                                <span className="text-base font-semibold text-slate-900">Ports</span>
                                 <button
                                   type="button"
                                   onClick={() => updateServiceConfig(service.name, { ports: [...config.ports, ''] })}
-                                  className="text-xs font-semibold text-purple-200 hover:text-white"
+                                  className="text-sm font-semibold text-purple-700 hover:text-purple-900"
                                 >
                                   + Add
                                 </button>
                               </div>
-                              <div className="space-y-2">
-                                {config.ports.map((port, idx) => {
-                                  const [hostPort, containerPort] = port.split(':');
-                                  return (
-                                    <div key={idx} className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              {config.ports.map((port, idx) => {
+                                const [hostPort, containerPort] = port.split(':');
+                                return (
+                                  <div key={idx} className="grid grid-cols-2 gap-3">
                                       <div>
-                                        <label className="block text-[11px] text-slate-300 mb-1">Host port</label>
+                                        <label className="block text-sm text-slate-700 mb-1">Host port</label>
                                         <input
                                           type="text"
                                           value={hostPort || ''}
@@ -380,12 +491,13 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                             newPorts[idx] = `${e.target.value}:${containerPort || '80'}`;
                                             updateServiceConfig(service.name, { ports: newPorts });
                                           }}
-                                          className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-xs text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                                           placeholder="8080"
                                         />
                                       </div>
-                                      <div>
-                                        <label className="block text-[11px] text-slate-300 mb-1">Container port</label>
+                                    <div>
+                                      <label className="block text-sm text-slate-700 mb-1">Container port</label>
+                                      <div className="flex gap-2">
                                         <input
                                           type="text"
                                           value={containerPort || ''}
@@ -394,25 +506,40 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                             newPorts[idx] = `${hostPort || '8080'}:${e.target.value}`;
                                             updateServiceConfig(service.name, { ports: newPorts });
                                           }}
-                                          className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-xs text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                                           placeholder="80"
                                         />
+                                        {idx >= (defaultsRef.current[service.name]?.ports ?? 0) && (
+                                          <button
+                                            type="button"
+                                            onClick={() => removePort(service.name, idx)}
+                                            className="p-2 rounded-md border border-slate-200 text-red-500 hover:bg-red-50 hover:border-red-200"
+                                            title="Remove port mapping"
+                                            aria-label="Remove port mapping"
+                                          >
+                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                              <path d="M9 3h6a1 1 0 0 1 .99.86L16 5h4a1 1 0 1 1 0 2h-.99l-.8 12.06A2 2 0 0 1 16.21 21H7.8a2 2 0 0 1-1.99-1.94L5 7H4a1 1 0 0 1 0-2h4l.01-1.14A1 1 0 0 1 9 3Zm6.01 4H8.99l-.7 12h7.42l.3-12Z" />
+                                              <path d="M10 10a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
+                                            </svg>
+                                          </button>
+                                        )}
                                       </div>
                                     </div>
-                                  );
-                                })}
+                                  </div>
+                                );
+                              })}
                               </div>
                             </div>
                           )}
 
                           {config.volumes.length > 0 && (
-                            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                            <div className="rounded-xl border border-slate-200 bg-white p-4">
                               <div className="mb-3 flex items-center justify-between">
-                                <span className="text-sm font-semibold text-white">Volumes</span>
+                                <span className="text-base font-semibold text-slate-900">Volumes</span>
                                 <button
                                   type="button"
                                   onClick={() => updateServiceConfig(service.name, { volumes: [...config.volumes, ''] })}
-                                  className="text-xs font-semibold text-purple-200 hover:text-white"
+                                  className="text-sm font-semibold text-purple-700 hover:text-purple-900"
                                 >
                                   + Add
                                 </button>
@@ -423,7 +550,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                   return (
                                     <div key={idx} className="grid grid-cols-2 gap-3">
                                       <div>
-                                        <label className="block text-[11px] text-slate-300 mb-1">Host path</label>
+                                        <label className="block text-sm text-slate-700 mb-1">Host path</label>
                                         <input
                                           type="text"
                                           value={hostPath || ''}
@@ -432,23 +559,39 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                             newVols[idx] = `${e.target.value}:${containerPath || '/data'}`;
                                             updateServiceConfig(service.name, { volumes: newVols });
                                           }}
-                                          className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-xs font-mono text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                                           placeholder="./wordpress"
                                         />
                                       </div>
                                       <div>
-                                        <label className="block text-[11px] text-slate-300 mb-1">Container path</label>
-                                        <input
-                                          type="text"
-                                          value={containerPath || ''}
-                                          onChange={(e) => {
-                                            const newVols = [...config.volumes];
-                                            newVols[idx] = `${hostPath || './data'}:${e.target.value}`;
-                                            updateServiceConfig(service.name, { volumes: newVols });
-                                          }}
-                                          className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-xs font-mono text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                          placeholder="/var/www/html"
-                                        />
+                                        <label className="block text-sm text-slate-700 mb-1">Container path</label>
+                                        <div className="flex gap-2">
+                                          <input
+                                            type="text"
+                                            value={containerPath || ''}
+                                            onChange={(e) => {
+                                              const newVols = [...config.volumes];
+                                              newVols[idx] = `${hostPath || './data'}:${e.target.value}`;
+                                              updateServiceConfig(service.name, { volumes: newVols });
+                                            }}
+                                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                            placeholder="/var/www/html"
+                                          />
+                                          {idx >= (defaultsRef.current[service.name]?.volumes ?? 0) && (
+                                            <button
+                                              type="button"
+                                              onClick={() => removeVolume(service.name, idx)}
+                                              className="p-2 rounded-md border border-slate-200 text-red-500 hover:bg-red-50 hover:border-red-200"
+                                              title="Remove volume"
+                                              aria-label="Remove volume"
+                                            >
+                                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                <path d="M9 3h6a1 1 0 0 1 .99.86L16 5h4a1 1 0 1 1 0 2h-.99l-.8 12.06A2 2 0 0 1 16.21 21H7.8a2 2 0 0 1-1.99-1.94L5 7H4a1 1 0 0 1 0-2h4l.01-1.14A1 1 0 0 1 9 3Zm6.01 4H8.99l-.7 12h7.42l.3-12Z" />
+                                                <path d="M10 10a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
+                                              </svg>
+                                            </button>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
                                   );
@@ -464,11 +607,11 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
               })}
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
-              <div className="flex items-center justify-between gap-3 border-b border-white/5 px-5 py-4">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-white">Network</h3>
-                  <p className="text-sm text-slate-300">Control how services communicate with each other.</p>
+                  <h3 className="text-lg font-semibold text-slate-900">Network</h3>
+                  <p className="text-base text-slate-600">Control how services communicate with each other.</p>
                 </div>
                 <label className="relative inline-flex cursor-pointer items-center">
                   <input
@@ -477,38 +620,38 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                     onChange={(e) => setNetworkConfig(prev => ({ ...prev, enabled: e.target.checked }))}
                     className="peer sr-only"
                   />
-                  <div className="h-7 w-14 rounded-full bg-white/10 border border-white/10 transition peer-checked:bg-purple-500 peer-focus:ring-2 peer-focus:ring-purple-300/50 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-lg after:transition peer-checked:after:translate-x-6" />
+                  <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
                 </label>
               </div>
 
               {networkConfig.enabled && (
-                <div className="grid gap-4 px-5 py-5 md:grid-cols-2">
+                <div className="grid gap-4 px-5 py-5 md:grid-cols-2 bg-slate-50">
                   <div className="space-y-3">
-                    <label className="block text-sm font-semibold text-white">Network name</label>
+                    <label className="block text-base font-semibold text-slate-900">Network name</label>
                     <input
                       type="text"
                       value={networkConfig.name}
                       onChange={(e) => setNetworkConfig(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                       placeholder="app_network"
                     />
 
-                    <label className="block text-sm font-semibold text-white">Driver</label>
+                    <label className="block text-base font-semibold text-slate-900">Driver</label>
                     <select
                       value={networkConfig.driver}
                       onChange={(e) => setNetworkConfig(prev => ({ ...prev, driver: e.target.value }))}
-                      className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                     >
-                      <option value="bridge" className="bg-slate-900 text-white">bridge</option>
-                      <option value="host" className="bg-slate-900 text-white">host</option>
-                      <option value="overlay" className="bg-slate-900 text-white">overlay</option>
-                      <option value="macvlan" className="bg-slate-900 text-white">macvlan</option>
-                      <option value="none" className="bg-slate-900 text-white">none</option>
+                      <option value="bridge" className="bg-white text-slate-900">bridge</option>
+                      <option value="host" className="bg-white text-slate-900">host</option>
+                      <option value="overlay" className="bg-white text-slate-900">overlay</option>
+                      <option value="macvlan" className="bg-white text-slate-900">macvlan</option>
+                      <option value="none" className="bg-white text-slate-900">none</option>
                     </select>
                   </div>
 
                   <div className="space-y-3">
-                    <label className="block text-sm font-semibold text-white">Subnet</label>
+                    <label className="block text-base font-semibold text-slate-900">Subnet</label>
                     <input
                       type="text"
                       value={networkConfig.ipam.subnet}
@@ -516,11 +659,11 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                         ...prev,
                         ipam: { ...prev.ipam, subnet: e.target.value }
                       }))}
-                      className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                       placeholder="172.20.0.0/16"
                     />
 
-                    <label className="block text-sm font-semibold text-white">Gateway</label>
+                    <label className="block text-base font-semibold text-slate-900">Gateway</label>
                     <input
                       type="text"
                       value={networkConfig.ipam.gateway}
@@ -528,17 +671,17 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                         ...prev,
                         ipam: { ...prev.ipam, gateway: e.target.value }
                       }))}
-                      className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                       placeholder="172.20.0.1"
                     />
 
-                    <div className="flex flex-wrap gap-3 pt-1 text-sm text-slate-200">
+                    <div className="flex flex-wrap gap-3 pt-1 text-base text-slate-700">
                       <label className="flex items-center gap-2">
                         <input
                           type="checkbox"
                           checked={networkConfig.internal}
                           onChange={(e) => setNetworkConfig(prev => ({ ...prev, internal: e.target.checked }))}
-                          className="h-4 w-4 rounded border-white/20 bg-black/40 text-purple-500 focus:ring-purple-500/50"
+                          className="h-4 w-4 rounded border-slate-300 bg-white text-purple-600 focus:ring-purple-500/30"
                         />
                         Internal
                       </label>
@@ -547,7 +690,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                           type="checkbox"
                           checked={networkConfig.attachable}
                           onChange={(e) => setNetworkConfig(prev => ({ ...prev, attachable: e.target.checked }))}
-                          className="h-4 w-4 rounded border-white/20 bg-black/40 text-purple-500 focus:ring-purple-500/50"
+                          className="h-4 w-4 rounded border-slate-300 bg-white text-purple-600 focus:ring-purple-500/30"
                         />
                         Attachable
                       </label>
@@ -560,33 +703,16 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
 
           <div className="lg:col-span-1">
             <div className="sticky top-6 space-y-4">
-              <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/60 backdrop-blur">
-                <div className="flex gap-2 p-3">
-                  <button
-                    onClick={() => setActiveTab('command')}
-                    className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                      activeTab === 'command'
-                        ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
-                        : 'bg-white/5 text-slate-200 hover:bg-white/10'
-                    }`}
-                  >
-                    Docker command
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('compose')}
-                    className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                      activeTab === 'compose'
-                        ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
-                        : 'bg-white/5 text-slate-200 hover:bg-white/10'
-                    }`}
-                  >
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="px-3 py-3">
+                  <span className="inline-flex items-center rounded-xl bg-purple-600 text-white text-sm font-semibold px-3 py-2">
                     Docker Compose
-                  </button>
+                  </span>
                 </div>
-                <div className="relative max-h-[70vh] overflow-auto border-t border-white/10 bg-gradient-to-b from-slate-900 via-black to-black px-4 py-5">
+                <div className="relative max-h-[70vh] overflow-auto border-t border-slate-100 bg-slate-50 px-4 py-5">
                   <button
                     onClick={() => {
-                      const text = activeTab === 'command' ? generateDockerCommand() : generateDockerCompose();
+                      const text = generateDockerCompose();
                       if (text.trim().length > 0) {
                         navigator.clipboard.writeText(text).then(() => {
                           setCopied(true);
@@ -594,26 +720,26 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                         });
                       }
                     }}
-                    className="absolute right-4 top-4 rounded-lg border border-white/10 bg-white/5 p-2 text-slate-100 hover:bg-white/10"
+                    className="absolute right-4 top-4 rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
                     title="Copy to clipboard"
                   >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
                   </button>
-                  <pre className="whitespace-pre-wrap break-words text-xs leading-relaxed text-emerald-200 pr-10">
-                    {activeTab === 'command' ? generateDockerCommand() : generateDockerCompose()}
+                  <pre className="whitespace-pre-wrap break-words text-sm leading-relaxed text-emerald-700 pr-10">
+                    {generateDockerCompose()}
                   </pre>
                   {copied && (
-                    <div className="absolute right-4 top-14 rounded-full bg-emerald-500/20 px-3 py-1 text-[11px] font-semibold text-emerald-100 border border-emerald-400/30">
+                    <div className="absolute right-4 top-14 rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700 border border-emerald-200">
                       Copied
                     </div>
                   )}
                 </div>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200 backdrop-blur">
-                <h4 className="mb-2 text-sm font-semibold text-white">Tips</h4>
-                <ul className="list-disc space-y-1 pl-4 text-xs text-slate-300">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 text-base text-slate-700 shadow-sm">
+                <h4 className="mb-2 text-base font-semibold text-slate-900">Tips</h4>
+                <ul className="list-disc space-y-1 pl-4 text-sm text-slate-600">
                   <li>Toggle services to include only what you need.</li>
                   <li>Network name is reused in both docker run and compose outputs.</li>
                   <li>Use the copy button to quickly grab the selected output.</li>
