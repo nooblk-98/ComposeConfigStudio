@@ -67,24 +67,6 @@ export default function AppList({ apps, onSelectApp }: AppListProps) {
           {/* Left Sidebar */}
           <aside className="lg:col-span-1 bg-white border border-slate-200 rounded-2xl p-5 sticky top-6 h-fit shadow-sm">
             <div className="space-y-6">
-              {/* Links */}
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 mb-3">Links</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {['Sponsors', 'Requests', 'Partners', 'Icons'].map((label) => (
-                    <a
-                      key={label}
-                      className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 transition-colors rounded-lg px-3 py-2 flex items-center justify-between"
-                      href="#"
-                    >
-                      {label}
-                      <svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                    </a>
-                  ))}
-                </div>
-                <p className="mt-2 text-xs text-slate-500">Powered by Docker Stack Generator</p>
-              </div>
-
               {/* Search */}
               <div>
                 <h3 className="text-sm font-bold text-slate-900 mb-2">Search</h3>
@@ -172,7 +154,7 @@ export default function AppList({ apps, onSelectApp }: AppListProps) {
                         <p className="text-xs text-slate-600 mb-3 line-clamp-2">{app.description}</p>
                       )}
                       <div className="flex flex-wrap gap-2">
-                        {app.version && <span className="text-[10px] bg-slate-100 text-slate-800 px-2 py-1 rounded font-medium border border-slate-200">v{app.version}</span>}
+                        {app.version && <span className="text-[10px] bg-slate-100 text-slate-800 px-2 py-1 rounded font-medium border border-slate-200">{app.version}</span>}
                         {app.defaultPort && <span className="text-[10px] bg-purple-50 text-purple-700 px-2 py-1 rounded font-medium border border-purple-200">Port {app.defaultPort}</span>}
                         {app.databases && app.databases.length > 0 && (
                           <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-medium border border-emerald-200">{app.databases.length} DB options</span>

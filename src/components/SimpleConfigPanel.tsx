@@ -384,6 +384,9 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                     {app.defaultPort && (
                       <span className="rounded-full bg-purple-50 px-3 py-1 text-purple-700 border border-purple-200">Default port {app.defaultPort}</span>
                     )}
+                    {app.version && (
+                      <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700 border border-blue-200">{app.version}</span>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:w-64">
@@ -412,7 +415,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
                       <div>
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden">
+                          <div className="h-10 w-10 flex items-center justify-center overflow-hidden">
                             {iconUrl ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img

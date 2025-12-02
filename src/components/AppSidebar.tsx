@@ -42,7 +42,7 @@ export default function AppSidebar({ app, onBack }: AppSidebarProps) {
         <div className="mb-8">
           <div className="flex items-center gap-2">
              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100">
-               v{app.version}
+               {app.version}
              </span>
              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
                Port {app.defaultPort}
