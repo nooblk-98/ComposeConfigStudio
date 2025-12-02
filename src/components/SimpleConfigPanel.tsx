@@ -5,6 +5,7 @@ import { AppDefinition } from '@/types/app';
 
 interface SimpleConfigPanelProps {
   app: AppDefinition;
+  onBack: () => void;
 }
 
 interface ServiceConfig {
@@ -16,7 +17,7 @@ interface ServiceConfig {
   volumes: string[];
 }
 
-export default function SimpleConfigPanel({ app }: SimpleConfigPanelProps) {
+export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProps) {
   // Initialize service configs
   const [serviceConfigs, setServiceConfigs] = useState<Record<string, ServiceConfig>>(() => {
     const configs: Record<string, ServiceConfig> = {};
@@ -74,29 +75,45 @@ export default function SimpleConfigPanel({ app }: SimpleConfigPanelProps) {
     const enabledServices = app.services?.filter(s => serviceConfigs[s.name]?.enabled);
     if (!enabledServices || enabledServices.length === 0) return '';
 
-    const firstService = enabledServices[0];
-    const config = serviceConfigs[firstService.name];
-    
-    let cmd = `docker run --name ${config.containerName} \\`;
-    
-    // Add ports
-    config.ports.forEach(port => {
-      cmd += `\n-p ${port} \\`;
+    const parts: string[] = [];
+
+    if (networkConfig.enabled) {
+      parts.push(`# Create network once\ndocker network create ${networkConfig.name} || true`);
+    }
+
+    enabledServices.forEach(service => {
+      const config = serviceConfigs[service.name];
+      let cmd = `docker run -d --name ${config.containerName}`;
+
+      if (networkConfig.enabled) {
+        cmd += ` --network ${networkConfig.name}`;
+      }
+
+      config.ports.forEach(port => {
+        const trimmed = port.trim();
+        if (trimmed) {
+          cmd += ` -p ${trimmed}`;
+        }
+      });
+
+      Object.entries(config.environment).forEach(([key, value]) => {
+        if (key) {
+          cmd += ` -e ${key}=${value}`;
+        }
+      });
+
+      config.volumes.forEach(vol => {
+        const trimmed = vol.trim();
+        if (trimmed) {
+          cmd += ` -v ${trimmed}`;
+        }
+      });
+
+      cmd += ` ${config.selectedImage}`;
+      parts.push(cmd);
     });
-    
-    // Add environment variables
-    Object.entries(config.environment).forEach(([key, value]) => {
-      cmd += `\n-e ${key}=${value} \\`;
-    });
-    
-    // Add volumes
-    config.volumes.forEach(vol => {
-      cmd += `\n-d ${vol} \\`;
-    });
-    
-    cmd += `\n${config.selectedImage}`;
-    
-    return cmd;
+
+    return parts.join('\n\n');
   };
 
   const generateDockerCompose = () => {
@@ -187,7 +204,7 @@ export default function SimpleConfigPanel({ app }: SimpleConfigPanelProps) {
       <div className="flex-1 overflow-y-auto p-8">
         <div className="max-w-4xl mx-auto">
           <button
-            onClick={() => window.location.reload()}
+            onClick={onBack}
             className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -197,6 +214,23 @@ export default function SimpleConfigPanel({ app }: SimpleConfigPanelProps) {
           </button>
           <h1 className="text-3xl font-bold mb-2 text-gray-900">{app.name}</h1>
           <p className="text-gray-600 mb-8">{app.description}</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+              <p className="text-xs text-gray-500">Services Enabled</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {Object.values(serviceConfigs).filter(cfg => cfg.enabled).length}/{app.services?.length || 0}
+              </p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+              <p className="text-xs text-gray-500">Network</p>
+              <p className="text-lg font-semibold text-gray-900">{networkConfig.enabled ? networkConfig.name : 'Disabled'}</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+              <p className="text-xs text-gray-500">Output</p>
+              <p className="text-lg font-semibold text-gray-900 capitalize">{activeTab}</p>
+            </div>
+          </div>
 
           {/* Services */}
           {app.services?.map((service) => {
@@ -267,13 +301,27 @@ export default function SimpleConfigPanel({ app }: SimpleConfigPanelProps) {
                     {/* Environment Variables */}
                     {Object.keys(config.environment).length > 0 && (
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">
-                          Environment Variables
-                        </label>
+                        <div className="flex items-center justify-between mb-3">
+                          <label className="block text-sm font-semibold text-gray-700">
+                            Environment Variables
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const index = Object.keys(config.environment).length + 1;
+                              updateServiceConfig(service.name, {
+                                environment: { ...config.environment, [`NEW_VAR_${index}`]: '' }
+                              });
+                            }}
+                            className="text-xs text-purple-600 hover:text-purple-700 font-medium"
+                          >
+                            + Add variable
+                          </button>
+                        </div>
                         <div className="space-y-3">
                           {Object.entries(config.environment).map(([key, value]) => (
                             <div key={key} className="grid grid-cols-3 gap-3 items-center">
-                              <span className="text-sm font-mono text-gray-600">{key}</span>
+                              <span className="text-sm font-mono text-gray-600 truncate" title={key}>{key}</span>
                               <input
                                 type={key.toLowerCase().includes('password') ? 'password' : 'text'}
                                 value={value}
@@ -289,9 +337,18 @@ export default function SimpleConfigPanel({ app }: SimpleConfigPanelProps) {
                     {/* Ports */}
                     {config.ports.length > 0 && (
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Ports
-                        </label>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-semibold text-gray-700">
+                            Ports
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => updateServiceConfig(service.name, { ports: [...config.ports, ''] })}
+                            className="text-xs text-purple-600 hover:text-purple-700 font-medium"
+                          >
+                            + Add port
+                          </button>
+                        </div>
                         {config.ports.map((port, idx) => {
                           const [hostPort, containerPort] = port.split(':');
                           return (
@@ -333,9 +390,18 @@ export default function SimpleConfigPanel({ app }: SimpleConfigPanelProps) {
                     {/* Volumes */}
                     {config.volumes.length > 0 && (
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Volumes
-                        </label>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-semibold text-gray-700">
+                            Volumes
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => updateServiceConfig(service.name, { volumes: [...config.volumes, ''] })}
+                            className="text-xs text-purple-600 hover:text-purple-700 font-medium"
+                          >
+                            + Add volume
+                          </button>
+                        </div>
                         {config.volumes.map((vol, idx) => {
                           const [hostPath, containerPath] = vol.split(':');
                           return (
@@ -523,27 +589,34 @@ export default function SimpleConfigPanel({ app }: SimpleConfigPanelProps) {
           </button>
         </div>
 
-        {/* Terminal Output */}
-        <div className="flex-1 overflow-auto bg-black p-6 relative">
-          <button
-            onClick={() => {
-              const text = activeTab === 'command' ? generateDockerCommand() : generateDockerCompose();
-              navigator.clipboard.writeText(text).then(() => {
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-              });
-            }}
-            className="absolute top-4 right-4 p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors border border-gray-600"
-            title="Copy to clipboard"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-          </button>
-          <pre className="text-green-400 text-sm font-mono leading-relaxed pr-12 whitespace-pre-wrap">
-            {activeTab === 'command' ? generateDockerCommand() : generateDockerCompose()}
-          </pre>
-        </div>
+          {/* Terminal Output */}
+          <div className="flex-1 overflow-auto bg-black p-6 relative">
+            <button
+              onClick={() => {
+                const text = activeTab === 'command' ? generateDockerCommand() : generateDockerCompose();
+                if (text.trim().length > 0) {
+                  navigator.clipboard.writeText(text).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  });
+                }
+              }}
+              className="absolute top-4 right-4 p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors border border-gray-600"
+              title="Copy to clipboard"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </button>
+            <pre className="text-green-400 text-sm font-mono leading-relaxed pr-12 whitespace-pre-wrap">
+              {activeTab === 'command' ? generateDockerCommand() : generateDockerCompose()}
+            </pre>
+            {copied && (
+              <div className="absolute top-4 right-14 bg-green-600 text-white text-xs px-3 py-1 rounded-full shadow-sm">
+                Copied!
+              </div>
+            )}
+          </div>
       </div>
     </div>
   );

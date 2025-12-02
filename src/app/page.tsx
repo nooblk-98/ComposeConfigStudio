@@ -52,7 +52,7 @@ export default function Home() {
   // Show configuration UI for selected app
   // Use SimpleConfigPanel if app has services defined, otherwise use legacy ConfigPanel
   if (selectedApp.services && selectedApp.services.length > 0) {
-    return <SimpleConfigPanel app={selectedApp} />;
+    return <SimpleConfigPanel app={selectedApp} onBack={handleBackToList} />;
   }
   
   return (
