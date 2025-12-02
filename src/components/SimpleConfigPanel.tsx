@@ -114,33 +114,19 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
           };
         });
 
-      // Sync DB env into the primary app service if this is the database group
-      if (group === 'database') {
-        const primaryService = app.services?.find(s => !s.group);
-        if (primaryService && next[primaryService.name]) {
-          const selectedConfig = next[selectedService];
-          const cleanedEnv: Record<string, string> = { ...next[primaryService.name].environment };
-
-          // Remove any env keys that belong to any database option
-          const dbEnvKeys = new Set<string>();
-          app.services
-            ?.filter(s => s.group === group)
-            .forEach(s => Object.keys(s.environment || {}).forEach(k => dbEnvKeys.add(k)));
-
-          Object.keys(cleanedEnv).forEach(k => {
-            if (dbEnvKeys.has(k) || k.startsWith('DB_') || k.startsWith('MYSQL_') || k.startsWith('POSTGRES')) {
-              delete cleanedEnv[k];
-            }
+      // If selecting app flavor, toggle related database service
+      if (group === 'npm-flavor') {
+        const dbMap: Record<string, string | null> = {
+          'npm-sqlite': null,
+          'npm-mariadb': 'mariadb',
+          'npm-postgres': 'postgres'
+        };
+        const targetDb = dbMap[selectedService];
+        app.services
+          ?.filter(s => s.group === 'database')
+          .forEach(s => {
+            next[s.name] = { ...next[s.name], enabled: targetDb === s.name };
           });
-
-          Object.entries(selectedConfig.environment).forEach(([k, v]) => {
-            cleanedEnv[k] = v;
-          });
-          next[primaryService.name] = {
-            ...next[primaryService.name],
-            environment: cleanedEnv
-          };
-        }
       }
 
       return next;
@@ -517,42 +503,45 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
 
             <div className="space-y-5">
               {/* Group selectors (e.g., database options) */}
-              {app.services && (
-                Object.entries(
-                  app.services.reduce<Record<string, { name: string; displayName?: string }[]>>((acc, svc) => {
-                    if (svc.group) {
-                      acc[svc.group] = acc[svc.group] || [];
-                      acc[svc.group].push({ name: svc.name, displayName: svc.displayName });
-                    }
-                    return acc;
-                  }, {})
-                ).map(([group, services]) => (
-                  services.length > 1 && (
-                    <div key={group} className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
-                      <p className="text-sm font-semibold text-slate-900 mb-3 capitalize">Database settings</p>
-                      <div className="flex border border-slate-200 rounded-lg overflow-hidden w-full max-w-xl">
-                        {services.map((s, idx) => {
-                          const isActive = serviceConfigs[s.name]?.enabled;
-                          const isLast = idx === services.length - 1;
-                          return (
-                            <button
-                              key={s.name}
-                              onClick={() => setGroupSelection(group, s.name)}
-                              className={`flex-1 px-4 py-2 text-sm font-medium transition-colors border-r border-slate-200 last:border-r-0 ${
-                                isActive
-                                  ? 'bg-emerald-500 text-white'
-                                  : 'bg-white text-slate-700 hover:bg-slate-50'
-                              } ${isLast ? 'last:border-r-0' : ''}`}
-                            >
-                              {s.displayName || s.name}
-                            </button>
-                          );
-                        })}
+              {app.multiDb && app.services && (() => {
+                const grouped = app.services.reduce<Record<string, { name: string; displayName?: string; selectorLabel?: string }[]>>((acc, svc) => {
+                  if (svc.group) {
+                    acc[svc.group] = acc[svc.group] || [];
+                    acc[svc.group].push({ name: svc.name, displayName: svc.displayName, selectorLabel: svc.selectorLabel });
+                  }
+                  return acc;
+                }, {});
+                const hasFlavorGroup = !!grouped['npm-flavor']?.length;
+
+                return Object.entries(grouped)
+                  .filter(([group]) => !(group === 'database' && hasFlavorGroup))
+                  .map(([group, services]) => (
+                    services.length > 1 && (
+                      <div key={group} className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
+                        <p className="text-sm font-semibold text-slate-900 mb-3 capitalize">Database settings</p>
+                        <div className="flex border border-slate-200 rounded-lg overflow-hidden w-full max-w-xl">
+                          {services.map((s, idx) => {
+                            const isActive = serviceConfigs[s.name]?.enabled;
+                            const isLast = idx === services.length - 1;
+                            return (
+                              <button
+                                key={s.name}
+                                onClick={() => setGroupSelection(group, s.name)}
+                                className={`flex-1 px-4 py-2 text-sm font-medium transition-colors border-r border-slate-200 last:border-r-0 ${
+                                  isActive
+                                    ? 'bg-emerald-500 text-white'
+                                    : 'bg-white text-slate-700 hover:bg-slate-50'
+                                } ${isLast ? 'last:border-r-0' : ''}`}
+                              >
+                                {s.selectorLabel || s.displayName || s.name}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )
-                ))
-              )}
+                    )
+                  ));
+              })()}
 
               {app.services?.map((service) => {
                 const config = serviceConfigs[service.name];
@@ -589,7 +578,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                               Required
                             </span>
                           )}
-                          {service.group && (
+                          {service.group && service.group !== 'npm-flavor' && (
                             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 border border-slate-200">
                               {service.group}
                             </span>

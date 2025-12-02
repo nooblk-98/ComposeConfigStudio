@@ -35,6 +35,7 @@ export interface ServiceDefinition {
   displayName?: string; // Display name in UI (e.g., "Database")
   icon?: string; // Optional icon URL for the service (e.g., devicon)
   group?: string; // Optional grouping key (e.g., "database") for mutually exclusive service options
+  selectorLabel?: string; // Optional label to show in group selectors
   mandatory: boolean; // Whether this service is required
   images: string[]; // Available Docker images (e.g., ["wordpress:php8.2-apache", "wordpress:php8.3-apache"])
   defaultImage: string; // Default image to use
