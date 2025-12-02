@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { AppDefinition, AppConfig } from '@/types/app';
 import OutputPanel from './OutputPanel';
 import AdvancedOptions from './AdvancedOptions';
+import ToggleSwitch from './ToggleSwitch';
 
 interface ConfigPanelProps {
   app: AppDefinition;
@@ -141,52 +142,62 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
       <div className="flex-1 overflow-y-auto p-8 scrollbar-thin bg-gray-50">
         <h1 className="text-3xl font-bold mb-6 text-gray-900 tracking-tight">Docker Stack Generator</h1>
 
-        {/* Container Settings */}
+        {/* Main Application Settings - Consolidated WordPress Container Configuration */}
         <section className="bg-white shadow-sm border border-gray-200 rounded-xl p-6 mb-6 transition-all hover:shadow-md">
-          <h2 className="text-xl font-bold mb-4 text-gray-900 flex items-center gap-2">
-            Container settings
-          </h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Name
-              </label>
-              <input
-                type="text"
-                value={config.name}
-                onChange={(e) => {
-                  console.log('Name change', e.target.value);
-                  updateConfig({ name: e.target.value });
-                }}
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-gray-900 placeholder-gray-400 transition-all"
-              />
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-md">
+              <span className="text-white text-2xl font-bold">{app.name.charAt(0)}</span>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Port
-              </label>
-              <input
-                type="number"
-                value={config.port}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
-                  console.log('Port change', val);
-                  updateConfig({ port: val });
-                }}
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-gray-900 placeholder-gray-400 transition-all"
-              />
+              <h2 className="text-2xl font-bold text-gray-900">{app.name} Container</h2>
+              <p className="text-sm text-gray-500">Configure main application container settings</p>
             </div>
           </div>
-        </section>
 
-        {/* Docker Volumes */}
-        <section className="bg-white shadow-sm border border-gray-200 rounded-xl p-6 mb-6 transition-all hover:shadow-md">
-          <h2 className="text-xl font-bold mb-4 text-gray-900 flex items-center gap-2">
-            Docker volumes
-          </h2>
-          <div className="space-y-3">
-            {Object.entries(app.volumes).map(([key, volume]) => (
-              <div key={key} className="flex items-start p-3 rounded-lg hover:bg-gray-50 transition-colors">
+          {/* Container Basic Settings */}
+          <div className="mb-6">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
+              <span>⚙️</span> Container Configuration
+            </h3>
+            <div className="grid grid-cols-2 gap-6">
+            <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">
+                  Container Name
+                </label>
+                <input
+                  type="text"
+                  value={config.name}
+                  onChange={(e) => updateConfig({ name: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-gray-900 placeholder-gray-400"
+                />
+                <p className="text-xs text-gray-500 mt-1">Unique name for the Docker container</p>
+              </div>
+            <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">
+                  Port
+                </label>
+                <input
+                  type="number"
+                  value={config.port}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    updateConfig({ port: val });
+                  }}
+                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-gray-900 placeholder-gray-400"
+                />
+                <p className="text-xs text-gray-500 mt-1">External port to access the application</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Docker Volumes */}
+          <div className="mb-6">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
+              <span>💾</span> Docker Volumes
+            </h3>
+            <div className="space-y-3">
+              {Object.entries(app.volumes).map(([key, volume]) => (
+                <div key={key} className="flex items-start p-4 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
                 <input
                   type="checkbox"
                   id={`volume-${key}`}
@@ -240,7 +251,7 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
                               }
                             });
                           }}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm text-gray-900"
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm text-gray-900"
                         />
                       </div>
                     </div>
@@ -248,8 +259,40 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
                 </div>
               </div>
             ))}
+            </div>
           </div>
+
+          {/* Environment Variables */}
+          {Object.keys(app.env).length > 0 && (
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
+                <span>🔧</span> Environment Variables
+              </h3>
+              <div className="grid grid-cols-2 gap-6">
+                {Object.entries(app.env).map(([key, envVar]) => {
+                  const isPassword = key.toLowerCase().includes('password') || key.toLowerCase().includes('secret');
+                  
+                  return (
+                    <div key={key}>
+                      <label className="block text-sm font-bold text-gray-900 mb-2">
+                        {envVar.key}
+                      </label>
+                      <input
+                        type={isPassword ? 'password' : 'text'}
+                        value={config.env[key] || envVar.value}
+                        onChange={(e) => updateEnv(key, e.target.value)}
+                        placeholder={envVar.description}
+                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-gray-900 placeholder-gray-400"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">{envVar.description}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </section>
+
 
         {/* Database Settings */}
         {(app.databases.length > 0 || app.needs_db) && (
@@ -265,7 +308,7 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
                     onClick={() => updateDatabase(db)}
                     className={`px-4 py-2 text-sm font-medium transition-colors ${
                       config.database === db
-                        ? 'bg-teal-400 text-white'
+                        ? 'bg-purple-600 text-white'
                         : 'bg-white text-gray-700 hover:bg-gray-50 border-l first:border-l-0 border-gray-200'
                     }`}
                   >
@@ -275,60 +318,25 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
               </div>
             )}
 
-            {/* DB Fields Grid */}
-            <div className="grid grid-cols-2 gap-6 mb-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">Host</label>
-                <input
-                  type="text"
-                  value={config.externalDbConfig?.host}
-                  onChange={(e) => updateConfig({ externalDbConfig: { ...config.externalDbConfig, host: e.target.value } })}
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-900 placeholder-gray-400"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">Database Name</label>
-                <input
-                  type="text"
-                  value={config.externalDbConfig?.name}
-                  onChange={(e) => updateConfig({ externalDbConfig: { ...config.externalDbConfig, name: e.target.value } })}
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-900 placeholder-gray-400"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">User</label>
-                <input
-                  type="text"
-                  value={config.externalDbConfig?.user}
-                  onChange={(e) => updateConfig({ externalDbConfig: { ...config.externalDbConfig, user: e.target.value } })}
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-900 placeholder-gray-400"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">Password</label>
-                <input
-                  type="password"
-                  value={config.externalDbConfig?.password}
-                  onChange={(e) => updateConfig({ externalDbConfig: { ...config.externalDbConfig, password: e.target.value } })}
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-900 placeholder-gray-400"
-                />
-              </div>
-            </div>
+            <p className="text-sm text-gray-600 mb-6">
+              Configure database connection settings in the <strong>WordPress Container</strong> section above. 
+              Toggle below to add an internal database container.
+            </p>
 
             {/* Add Database Container Toggle */}
             {app.supports_external_db && (
-              <div className="mb-6">
+              <div>
                 <div className="flex items-center mb-4">
-                  <input
-                    type="checkbox"
+                  <ToggleSwitch
                     id="add-db-container"
                     checked={!config.useExternalDb}
-                    onChange={(e) => updateConfig({ useExternalDb: !e.target.checked })}
-                    className="w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                    onChange={(checked) => updateConfig({ useExternalDb: !checked })}
+                    label={
+                      <>
+                        Add <span className="bg-purple-600 text-white px-1 py-0.5 rounded text-sm">database</span> container
+                      </> as any
+                    }
                   />
-                  <label htmlFor="add-db-container" className="ml-3 text-base font-bold text-gray-900 cursor-pointer">
-                    Add <span className="bg-blue-600 text-white px-1 py-0.5 rounded text-sm">database</span> container
-                  </label>
                   <div className="flex-1 border-b border-dashed border-gray-300 ml-4 relative top-1"></div>
                 </div>
 
