@@ -5,6 +5,7 @@ import { AppDefinition } from '@/types/app';
 import AppList from '@/components/AppList';
 import AppSidebar from '@/components/AppSidebar';
 import ConfigPanel from '@/components/ConfigPanel';
+import SimpleConfigPanel from '@/components/SimpleConfigPanel';
 
 export default function Home() {
   const [apps, setApps] = useState<AppDefinition[]>([]);
@@ -49,6 +50,11 @@ export default function Home() {
   }
 
   // Show configuration UI for selected app
+  // Use SimpleConfigPanel if app has services defined, otherwise use legacy ConfigPanel
+  if (selectedApp.services && selectedApp.services.length > 0) {
+    return <SimpleConfigPanel app={selectedApp} />;
+  }
+  
   return (
     <div className="flex h-screen bg-gray-50">
       <AppSidebar app={selectedApp} onBack={handleBackToList} />

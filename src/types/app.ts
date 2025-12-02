@@ -30,6 +30,20 @@ export interface AttachableService {
   description?: string;
 }
 
+export interface ServiceDefinition {
+  name: string; // Service name (e.g., "wordpress", "db", "phpmyadmin")
+  displayName?: string; // Display name in UI (e.g., "Database")
+  mandatory: boolean; // Whether this service is required
+  images: string[]; // Available Docker images (e.g., ["wordpress:php8.2-apache", "wordpress:php8.3-apache"])
+  defaultImage: string; // Default image to use
+  containerName?: string; // Container name template
+  restart?: string; // Restart policy
+  ports?: string[]; // Port mappings (e.g., ["8080:80"])
+  environment?: Record<string, string>; // Environment variables
+  volumes?: string[]; // Volume mappings (e.g., ["./wordpress:/var/www/html"])
+  dependsOn?: string[]; // Service dependencies
+}
+
 export interface AppDefinition {
   id: string;
   name: string;
@@ -41,8 +55,14 @@ export interface AppDefinition {
   defaultPort: number;
   image: string;
   tools: Tool[];
+  
+  // New simplified service-based structure
+  services?: ServiceDefinition[]; // All services (main app, database, addons)
+  namedVolumes?: string[]; // Named volumes to create (e.g., ["db_data"])
+  
+  // Legacy fields (keeping for backward compatibility)
   env: Record<string, EnvVar>;
-  optionalEnv?: OptionalEnvVar[]; // Optional environment variables with defaults
+  optionalEnv?: OptionalEnvVar[];
   volumes: Record<string, Volume>;
   databases: string[];
   features: {
