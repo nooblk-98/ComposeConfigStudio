@@ -158,13 +158,13 @@ export default function AppList({ apps, onSelectApp }: AppListProps) {
                         <p className="text-xs text-gray-500 mb-3 line-clamp-2">{app.description}</p>
                       )}
                       <div className="flex flex-wrap gap-2">
-                        <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded font-medium">v{app.version}</span>
-                        <span className="text-[10px] bg-purple-50 text-purple-600 px-2 py-1 rounded font-medium">Port {app.defaultPort}</span>
-                        {app.databases.length > 0 && (
+                        {app.version && <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded font-medium">v{app.version}</span>}
+                        {app.defaultPort && <span className="text-[10px] bg-purple-50 text-purple-600 px-2 py-1 rounded font-medium">Port {app.defaultPort}</span>}
+                        {app.databases && app.databases.length > 0 && (
                           <span className="text-[10px] bg-green-50 text-green-600 px-2 py-1 rounded font-medium">{app.databases.length} DB options</span>
                         )}
                       </div>
-                      {showDetails && (
+                      {showDetails && app.tools && app.tools.length > 0 && (
                         <div className="mt-3 flex items-center gap-1 text-[11px] text-gray-400">
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                           {app.tools.slice(0, 2).map(tool => tool.name).join(', ')}

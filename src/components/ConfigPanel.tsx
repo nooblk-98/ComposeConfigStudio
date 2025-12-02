@@ -19,13 +19,13 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
     optionalEnv: {},
     volumes: {},
     volumeOverrides: {},
-    database: app.databases[0],
+    database: app.databases?.[0] || 'mysql',
     dbVersion: '8.0', // Default MySQL version
     dbImage: 'mysql:8.0',
-    adminName: app.env.SEMAPHORE_ADMIN_NAME?.value || 'Admin',
-    adminEmail: app.env.SEMAPHORE_ADMIN_EMAIL?.value || 'admin@localhost',
-    adminPassword: app.env.SEMAPHORE_ADMIN_PASSWORD?.value || 'changeme',
-    adminLogin: app.env.SEMAPHORE_ADMIN?.value || 'admin',
+    adminName: app.env?.SEMAPHORE_ADMIN_NAME?.value || 'Admin',
+    adminEmail: app.env?.SEMAPHORE_ADMIN_EMAIL?.value || 'admin@localhost',
+    adminPassword: app.env?.SEMAPHORE_ADMIN_PASSWORD?.value || 'changeme',
+    adminLogin: app.env?.SEMAPHORE_ADMIN?.value || 'admin',
     enableRunner: false,
     customEnv: [],
     customPorts: [],
@@ -48,20 +48,24 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
   // Initialize config from app definition
   useEffect(() => {
     const initialEnv: Record<string, string> = {};
-    Object.entries(app.env).forEach(([key, envVar]) => {
-      initialEnv[key] = envVar.value;
-    });
+    if (app.env) {
+      Object.entries(app.env).forEach(([key, envVar]) => {
+        initialEnv[key] = envVar.value;
+      });
+    }
 
     const initialVolumes: Record<string, boolean> = {};
-    Object.keys(app.volumes).forEach(key => {
-      initialVolumes[key] = true;
-    });
+    if (app.volumes) {
+      Object.keys(app.volumes).forEach(key => {
+        initialVolumes[key] = true;
+      });
+    }
 
     // Extract admin fields from env if they exist
-    const adminLogin = app.env.SEMAPHORE_ADMIN?.value || app.env.NEXTCLOUD_ADMIN_USER?.value || app.env.WORDPRESS_DB_USER?.value || app.env.GF_SECURITY_ADMIN_USER?.value || 'admin';
-    const adminName = app.env.SEMAPHORE_ADMIN_NAME?.value || 'Admin';
-    const adminEmail = app.env.SEMAPHORE_ADMIN_EMAIL?.value || app.env.NEXTCLOUD_ADMIN_EMAIL?.value || 'admin@localhost';
-    const adminPassword = app.env.SEMAPHORE_ADMIN_PASSWORD?.value || app.env.NEXTCLOUD_ADMIN_PASSWORD?.value || app.env.WORDPRESS_DB_PASSWORD?.value || app.env.GF_SECURITY_ADMIN_PASSWORD?.value || 'changeme';
+    const adminLogin = app.env?.SEMAPHORE_ADMIN?.value || app.env?.NEXTCLOUD_ADMIN_USER?.value || app.env?.WORDPRESS_DB_USER?.value || app.env?.GF_SECURITY_ADMIN_USER?.value || 'admin';
+    const adminName = app.env?.SEMAPHORE_ADMIN_NAME?.value || 'Admin';
+    const adminEmail = app.env?.SEMAPHORE_ADMIN_EMAIL?.value || app.env?.NEXTCLOUD_ADMIN_EMAIL?.value || 'admin@localhost';
+    const adminPassword = app.env?.SEMAPHORE_ADMIN_PASSWORD?.value || app.env?.NEXTCLOUD_ADMIN_PASSWORD?.value || app.env?.WORDPRESS_DB_PASSWORD?.value || app.env?.GF_SECURITY_ADMIN_PASSWORD?.value || 'changeme';
 
     setConfig(prev => ({
       ...prev,
@@ -111,24 +115,26 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
 
   // Sync admin fields to env based on app
   useEffect(() => {
+    if (!app.env) return;
+    
     const updatedEnv = { ...config.env };
     
     // Map admin fields to appropriate env vars for each app
-    if (app.env.SEMAPHORE_ADMIN) {
+    if (app.env?.SEMAPHORE_ADMIN) {
       updatedEnv.SEMAPHORE_ADMIN = config.adminLogin;
       updatedEnv.SEMAPHORE_ADMIN_NAME = config.adminName;
       updatedEnv.SEMAPHORE_ADMIN_EMAIL = config.adminEmail;
       updatedEnv.SEMAPHORE_ADMIN_PASSWORD = config.adminPassword;
     }
-    if (app.env.NEXTCLOUD_ADMIN_USER) {
+    if (app.env?.NEXTCLOUD_ADMIN_USER) {
       updatedEnv.NEXTCLOUD_ADMIN_USER = config.adminLogin;
       updatedEnv.NEXTCLOUD_ADMIN_PASSWORD = config.adminPassword;
     }
-    if (app.env.WORDPRESS_DB_USER) {
+    if (app.env?.WORDPRESS_DB_USER) {
       updatedEnv.WORDPRESS_DB_USER = config.adminLogin;
       updatedEnv.WORDPRESS_DB_PASSWORD = config.adminPassword;
     }
-    if (app.env.GF_SECURITY_ADMIN_USER) {
+    if (app.env?.GF_SECURITY_ADMIN_USER) {
       updatedEnv.GF_SECURITY_ADMIN_USER = config.adminLogin;
       updatedEnv.GF_SECURITY_ADMIN_PASSWORD = config.adminPassword;
     }
@@ -191,12 +197,13 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
           </div>
 
           {/* Docker Volumes */}
-          <div className="mb-6">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
-              <span>💾</span> Docker Volumes
-            </h3>
-            <div className="space-y-3">
-              {Object.entries(app.volumes).map(([key, volume]) => (
+          {app.volumes && Object.keys(app.volumes).length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
+                <span>💾</span> Docker Volumes
+              </h3>
+              <div className="space-y-3">
+                {Object.entries(app.volumes).map(([key, volume]) => (
                 <div key={key} className="flex items-start p-4 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
                 <label className="relative inline-flex items-center cursor-pointer mr-3 mt-1">
                   <input
@@ -262,18 +269,19 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
                 </div>
               </div>
             ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Environment Variables */}
-          {Object.keys(app.env).length > 0 && (
+          {app.env && Object.keys(app.env).length > 0 && (
             <div>
               <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
                 <span>🔧</span> Environment Variables
               </h3>
               <div className="grid grid-cols-2 gap-6">
                 {/* Admin fields if applicable */}
-                {(app.env.SEMAPHORE_ADMIN || app.env.NEXTCLOUD_ADMIN_USER || app.env.WORDPRESS_DB_USER || app.env.GF_SECURITY_ADMIN_USER) && (
+                {(app.env?.SEMAPHORE_ADMIN || app.env?.NEXTCLOUD_ADMIN_USER || app.env?.WORDPRESS_DB_USER || app.env?.GF_SECURITY_ADMIN_USER) && (
                   <>
                     <div>
                       <label className="block text-sm font-bold text-gray-900 mb-2">
@@ -299,7 +307,7 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
                       />
                       <p className="text-xs text-gray-500 mt-1">Admin password</p>
                     </div>
-                    {app.env.SEMAPHORE_ADMIN_NAME && (
+                    {app.env?.SEMAPHORE_ADMIN_NAME && (
                       <div>
                         <label className="block text-sm font-bold text-gray-900 mb-2">
                           Admin Name
@@ -313,7 +321,7 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
                         <p className="text-xs text-gray-500 mt-1">Admin display name</p>
                       </div>
                     )}
-                    {(app.env.SEMAPHORE_ADMIN_EMAIL || app.env.NEXTCLOUD_ADMIN_EMAIL) && (
+                    {(app.env?.SEMAPHORE_ADMIN_EMAIL || app.env?.NEXTCLOUD_ADMIN_EMAIL) && (
                       <div>
                         <label className="block text-sm font-bold text-gray-900 mb-2">
                           Admin Email
@@ -331,7 +339,7 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
                 )}
                 
                 {/* Other environment variables */}
-                {Object.entries(app.env).map(([key, envVar]) => {
+                {app.env && Object.entries(app.env).map(([key, envVar]) => {
                   const isPassword = key.toLowerCase().includes('password') || key.toLowerCase().includes('secret');
                   
                   return (
@@ -357,12 +365,12 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
 
 
         {/* Database Settings */}
-        {(app.databases.length > 0 || app.needs_db) && (
+        {(app.databases && app.databases.length > 0 || app.needs_db) && (
           <section className="bg-white shadow-sm border border-gray-200 rounded-xl p-6 mb-6 transition-all hover:shadow-md">
             <h2 className="text-xl font-bold mb-4 text-gray-900">Database settings</h2>
             
             {/* DB Type Tabs */}
-            {app.databases.length > 0 && (
+            {app.databases && app.databases.length > 0 && (
               <div className="flex mb-6 border border-gray-200 rounded-lg overflow-hidden w-fit">
                 {app.databases.map((db) => (
                   <button

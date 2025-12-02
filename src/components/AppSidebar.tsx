@@ -51,27 +51,29 @@ export default function AppSidebar({ app, onBack }: AppSidebarProps) {
         </div>
 
         {/* Image Assembly Section */}
-        <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">Stack Components</h3>
-          <div className="space-y-3">
-            {app.tools.map((tool, index) => (
-              <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-md bg-white border border-gray-200 flex items-center justify-center text-lg shadow-sm">
-                    {tool.name === 'Ansible' && '📦'}
-                    {tool.name === 'Bash' && '💲'}
-                    {tool.name === 'OpenSSH' && '🔑'}
-                    {tool.name === 'Terraform' && '🔷'}
-                    {tool.name === 'PowerShell' && '⚡'}
-                    {!['Ansible', 'Bash', 'OpenSSH', 'Terraform', 'PowerShell'].includes(tool.name) && '🔧'}
+        {app.tools && app.tools.length > 0 && (
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">Stack Components</h3>
+            <div className="space-y-3">
+              {app.tools.map((tool, index) => (
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-md bg-white border border-gray-200 flex items-center justify-center text-lg shadow-sm">
+                      {tool.name === 'Ansible' && '📦'}
+                      {tool.name === 'Bash' && '💲'}
+                      {tool.name === 'OpenSSH' && '🔑'}
+                      {tool.name === 'Terraform' && '🔷'}
+                      {tool.name === 'PowerShell' && '⚡'}
+                      {!['Ansible', 'Bash', 'OpenSSH', 'Terraform', 'PowerShell'].includes(tool.name) && '🔧'}
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">{tool.name}</span>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">{tool.name}</span>
+                  <span className="text-xs font-mono text-gray-500 bg-white px-2 py-1 rounded border border-gray-200">{tool.version}</span>
                 </div>
-                <span className="text-xs font-mono text-gray-500 bg-white px-2 py-1 rounded border border-gray-200">{tool.version}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

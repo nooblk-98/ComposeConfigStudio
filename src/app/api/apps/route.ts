@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import appsData from '@/data/apps.json';
+import { appsList } from '@/data/index';
 
 export async function GET() {
-  return NextResponse.json(appsData);
+  return NextResponse.json({ apps: appsList });
 }

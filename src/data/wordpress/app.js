@@ -4,6 +4,13 @@ export default {
   description: "Popular CMS platform for websites and blogs",
   category: "CMS",
   logo: "https://e7.pngegg.com/pngimages/510/1010/png-clipart-wordpress-com-blog-wordpress.png",
+  version: "latest",
+  defaultPort: 8080,
+  databases: ["mysql", "mariadb"],
+  tools: [
+    { name: "PHP", version: "8.2" },
+    { name: "Apache", version: "2.4" }
+  ],
   
   services: [
     {
