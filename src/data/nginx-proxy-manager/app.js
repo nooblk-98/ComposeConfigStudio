@@ -63,6 +63,31 @@ export default {
       volumes: [
         "./data:/data",
         "./letsencrypt:/etc/letsencrypt"
+      ],
+      dependsOn: ["npm-db-mariadb"]
+    },
+
+    // MariaDB Database Container
+    {
+      name: "npm-db-mariadb",
+      group: "npm-flavor",
+      mandatory: false,
+      images: [
+        "mariadb:latest",
+        "mariadb:11",
+        "mariadb:10"
+      ],
+      defaultImage: "mariadb:latest",
+      containerName: "db",
+      restart: "always",
+      environment: {
+        MYSQL_ROOT_PASSWORD: "npm",
+        MYSQL_DATABASE: "npm",
+        MYSQL_USER: "npm",
+        MYSQL_PASSWORD: "npm"
+      },
+      volumes: [
+        "./mysql:/var/lib/mysql"
       ]
     },
 
@@ -92,6 +117,30 @@ export default {
       volumes: [
         "./data:/data",
         "./letsencrypt:/etc/letsencrypt"
+      ],
+      dependsOn: ["npm-db-postgres"]
+    },
+
+    // Postgres Database Container
+    {
+      name: "npm-db-postgres",
+      group: "npm-flavor",
+      mandatory: false,
+      images: [
+        "postgres:latest",
+        "postgres:16",
+        "postgres:15"
+      ],
+      defaultImage: "postgres:latest",
+      containerName: "db",
+      restart: "always",
+      environment: {
+        POSTGRES_DB: "npm",
+        POSTGRES_USER: "npm",
+        POSTGRES_PASSWORD: "npmpass"
+      },
+      volumes: [
+        "./postgres:/var/lib/postgresql/data"
       ]
     }
   ],

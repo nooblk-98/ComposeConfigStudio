@@ -104,17 +104,23 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
   const setGroupSelection = (group: string, selectedService: string) => {
     setServiceConfigs(prev => {
       const next = { ...prev };
+
+      // Get the selected service object
+      const selectedSvc = app.services?.find(s => s.name === selectedService);
+
       // Toggle services in the group
       app.services
         ?.filter(s => s.group === group)
         .forEach(s => {
+          // Enable if it's the selected service OR if it's a dependency of the selected service
+          const isDependency = selectedSvc?.dependsOn?.includes(s.name);
           next[s.name] = {
             ...next[s.name],
-            enabled: s.name === selectedService
+            enabled: s.name === selectedService || isDependency
           };
         });
 
-      // If selecting app flavor, toggle related database service
+      // If selecting app flavor, toggle related database service (legacy support for separate database group)
       if (group === 'npm-flavor') {
         const dbMap: Record<string, string | null> = {
           'npm-sqlite': null,
@@ -505,7 +511,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
               {/* Group selectors (e.g., database options) */}
               {app.multiDb && app.services && (() => {
                 const grouped = app.services.reduce<Record<string, { name: string; displayName?: string; selectorLabel?: string }[]>>((acc, svc) => {
-                  if (svc.group) {
+                  if (svc.group && svc.selectorLabel) {
                     acc[svc.group] = acc[svc.group] || [];
                     acc[svc.group].push({ name: svc.name, displayName: svc.displayName, selectorLabel: svc.selectorLabel });
                   }
@@ -527,11 +533,10 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                               <button
                                 key={s.name}
                                 onClick={() => setGroupSelection(group, s.name)}
-                                className={`flex-1 px-4 py-2 text-sm font-medium transition-colors border-r border-slate-200 last:border-r-0 ${
-                                  isActive
-                                    ? 'bg-emerald-500 text-white'
-                                    : 'bg-white text-slate-700 hover:bg-slate-50'
-                                } ${isLast ? 'last:border-r-0' : ''}`}
+                                className={`flex-1 px-4 py-2 text-sm font-medium transition-colors border-r border-slate-200 last:border-r-0 ${isActive
+                                  ? 'bg-emerald-500 text-white'
+                                  : 'bg-white text-slate-700 hover:bg-slate-50'
+                                  } ${isLast ? 'last:border-r-0' : ''}`}
                               >
                                 {s.selectorLabel || s.displayName || s.name}
                               </button>
@@ -633,7 +638,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
 
                         <div className="space-y-4">
                           {Object.keys(config.environment).length > 0 && (
-                          <div className="rounded-xl border border-slate-200 bg-white p-4">
+                            <div className="rounded-xl border border-slate-200 bg-white p-4">
                               <div className="mb-3 flex items-center justify-between">
                                 <span className="text-base font-semibold text-slate-900">Environment variables</span>
                                 <button
@@ -709,39 +714,39 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                             const serviceOptional = service.optionalEnv || (service.name === app.id ? app.optionalEnv : undefined);
                             return serviceOptional && serviceOptional.length > 0;
                           })() && (
-                            <div className="rounded-xl border border-slate-200 bg-white p-4">
-                              <div className="mb-3">
-                                <span className="text-base font-semibold text-slate-900">Optional environment variables</span>
-                                <p className="text-sm text-slate-500">Only included when a value is provided.</p>
-                              </div>
-                              <div className="space-y-4">
-                                {(service.optionalEnv || (service.name === app.id ? app.optionalEnv : []) || []).map(opt => {
-                                  const val = (optionalEnvValues[service.name] || optionalEnvValues[app.id] || {})[opt.key] ?? '';
-                                  return (
-                                    <div key={opt.key} className="space-y-1">
-                                      <div className="flex items-center justify-between gap-3">
-                                        <span className="text-xs font-mono tracking-wide text-slate-800">{opt.key}</span>
-                                        {opt.description && <span className="text-xs text-slate-500 text-right">{opt.description}</span>}
+                              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                                <div className="mb-3">
+                                  <span className="text-base font-semibold text-slate-900">Optional environment variables</span>
+                                  <p className="text-sm text-slate-500">Only included when a value is provided.</p>
+                                </div>
+                                <div className="space-y-4">
+                                  {(service.optionalEnv || (service.name === app.id ? app.optionalEnv : []) || []).map(opt => {
+                                    const val = (optionalEnvValues[service.name] || optionalEnvValues[app.id] || {})[opt.key] ?? '';
+                                    return (
+                                      <div key={opt.key} className="space-y-1">
+                                        <div className="flex items-center justify-between gap-3">
+                                          <span className="text-xs font-mono tracking-wide text-slate-800">{opt.key}</span>
+                                          {opt.description && <span className="text-xs text-slate-500 text-right">{opt.description}</span>}
+                                        </div>
+                                        <input
+                                          type={opt.key.toLowerCase().includes('password') ? 'password' : 'text'}
+                                          value={val}
+                                          onChange={(e) => setOptionalEnvValues(prev => ({
+                                            ...prev,
+                                            [service.name]: {
+                                              ...(prev[service.name] || prev[app.id] || {}),
+                                              [opt.key]: e.target.value
+                                            }
+                                          }))}
+                                          className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                          placeholder={opt.defaultValue || 'Enter value'}
+                                        />
                                       </div>
-                                      <input
-                                        type={opt.key.toLowerCase().includes('password') ? 'password' : 'text'}
-                                        value={val}
-                                        onChange={(e) => setOptionalEnvValues(prev => ({
-                                          ...prev,
-                                          [service.name]: {
-                                            ...(prev[service.name] || prev[app.id] || {}),
-                                            [opt.key]: e.target.value
-                                          }
-                                        }))}
-                                        className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                        placeholder={opt.defaultValue || 'Enter value'}
-                                      />
-                                    </div>
-                                  );
-                                })}
+                                    );
+                                  })}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
 
                           {config.ports.length > 0 && (
                             <div className="rounded-xl border border-slate-200 bg-white p-4">
@@ -755,11 +760,11 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                   + Add
                                 </button>
                               </div>
-                            <div className="space-y-2">
-                              {config.ports.map((port, idx) => {
-                                const [hostPort, containerPort] = port.split(':');
-                                return (
-                                  <div key={idx} className="grid grid-cols-2 gap-3">
+                              <div className="space-y-2">
+                                {config.ports.map((port, idx) => {
+                                  const [hostPort, containerPort] = port.split(':');
+                                  return (
+                                    <div key={idx} className="grid grid-cols-2 gap-3">
                                       <div>
                                         <label className="block text-sm text-slate-700 mb-1">Host port</label>
                                         <input
@@ -774,39 +779,39 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                           placeholder="8080"
                                         />
                                       </div>
-                                    <div>
-                                      <label className="block text-sm text-slate-700 mb-1">Container port</label>
-                                      <div className="flex gap-2">
-                                        <input
-                                          type="text"
-                                          value={containerPort || ''}
-                                          onChange={(e) => {
-                                            const newPorts = [...config.ports];
-                                            newPorts[idx] = `${hostPort || '8080'}:${e.target.value}`;
-                                            updateServiceConfig(service.name, { ports: newPorts });
-                                          }}
-                                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                          placeholder="80"
-                                        />
-                                        {idx >= (defaultsRef.current[service.name]?.ports ?? 0) && (
-                                          <button
-                                            type="button"
-                                            onClick={() => removePort(service.name, idx)}
-                                            className="p-2 rounded-md border border-slate-200 text-red-500 hover:bg-red-50 hover:border-red-200"
-                                            title="Remove port mapping"
-                                            aria-label="Remove port mapping"
-                                          >
-                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                              <path d="M9 3h6a1 1 0 0 1 .99.86L16 5h4a1 1 0 1 1 0 2h-.99l-.8 12.06A2 2 0 0 1 16.21 21H7.8a2 2 0 0 1-1.99-1.94L5 7H4a1 1 0 0 1 0-2h4l.01-1.14A1 1 0 0 1 9 3Zm6.01 4H8.99l-.7 12h7.42l.3-12Z" />
-                                              <path d="M10 10a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
-                                            </svg>
-                                          </button>
-                                        )}
+                                      <div>
+                                        <label className="block text-sm text-slate-700 mb-1">Container port</label>
+                                        <div className="flex gap-2">
+                                          <input
+                                            type="text"
+                                            value={containerPort || ''}
+                                            onChange={(e) => {
+                                              const newPorts = [...config.ports];
+                                              newPorts[idx] = `${hostPort || '8080'}:${e.target.value}`;
+                                              updateServiceConfig(service.name, { ports: newPorts });
+                                            }}
+                                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                            placeholder="80"
+                                          />
+                                          {idx >= (defaultsRef.current[service.name]?.ports ?? 0) && (
+                                            <button
+                                              type="button"
+                                              onClick={() => removePort(service.name, idx)}
+                                              className="p-2 rounded-md border border-slate-200 text-red-500 hover:bg-red-50 hover:border-red-200"
+                                              title="Remove port mapping"
+                                              aria-label="Remove port mapping"
+                                            >
+                                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                <path d="M9 3h6a1 1 0 0 1 .99.86L16 5h4a1 1 0 1 1 0 2h-.99l-.8 12.06A2 2 0 0 1 16.21 21H7.8a2 2 0 0 1-1.99-1.94L5 7H4a1 1 0 0 1 0-2h4l.01-1.14A1 1 0 0 1 9 3Zm6.01 4H8.99l-.7 12h7.42l.3-12Z" />
+                                                <path d="M10 10a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
+                                              </svg>
+                                            </button>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                );
-                              })}
+                                  );
+                                })}
                               </div>
                             </div>
                           )}
@@ -836,59 +841,59 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                 </button>
                               </div>
                               {config.volumesEnabled && (
-                              <div className="space-y-2">
-                                {config.volumes.map((vol, idx) => {
-                                  const [hostPath, containerPath] = vol.split(':');
-                                  return (
-                                    <div key={idx} className="grid grid-cols-2 gap-3">
-                                      <div>
-                                        <label className="block text-sm text-slate-700 mb-1">Host path</label>
-                                        <input
-                                          type="text"
-                                          value={hostPath || ''}
-                                          onChange={(e) => {
-                                            const newVols = [...config.volumes];
-                                            newVols[idx] = `${e.target.value}:${containerPath || '/data'}`;
-                                            updateServiceConfig(service.name, { volumes: newVols });
-                                          }}
-                                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                          placeholder="./wordpress"
-                                        />
-                                      </div>
-                                      <div>
-                                        <label className="block text-sm text-slate-700 mb-1">Container path</label>
-                                        <div className="flex gap-2">
+                                <div className="space-y-2">
+                                  {config.volumes.map((vol, idx) => {
+                                    const [hostPath, containerPath] = vol.split(':');
+                                    return (
+                                      <div key={idx} className="grid grid-cols-2 gap-3">
+                                        <div>
+                                          <label className="block text-sm text-slate-700 mb-1">Host path</label>
                                           <input
                                             type="text"
-                                            value={containerPath || ''}
+                                            value={hostPath || ''}
                                             onChange={(e) => {
                                               const newVols = [...config.volumes];
-                                              newVols[idx] = `${hostPath || './data'}:${e.target.value}`;
+                                              newVols[idx] = `${e.target.value}:${containerPath || '/data'}`;
                                               updateServiceConfig(service.name, { volumes: newVols });
                                             }}
                                             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                            placeholder="/var/www/html"
+                                            placeholder="./wordpress"
                                           />
-                                          {idx >= (defaultsRef.current[service.name]?.volumes ?? 0) && (
-                                            <button
-                                              type="button"
-                                              onClick={() => removeVolume(service.name, idx)}
-                                              className="p-2 rounded-md border border-slate-200 text-red-500 hover:bg-red-50 hover:border-red-200"
-                                              title="Remove volume"
-                                              aria-label="Remove volume"
-                                            >
-                                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                                <path d="M9 3h6a1 1 0 0 1 .99.86L16 5h4a1 1 0 1 1 0 2h-.99l-.8 12.06A2 2 0 0 1 16.21 21H7.8a2 2 0 0 1-1.99-1.94L5 7H4a1 1 0 0 1 0-2h4l.01-1.14A1 1 0 0 1 9 3Zm6.01 4H8.99l-.7 12h7.42l.3-12Z" />
-                                                <path d="M10 10a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
-                                              </svg>
-                                            </button>
-                                          )}
+                                        </div>
+                                        <div>
+                                          <label className="block text-sm text-slate-700 mb-1">Container path</label>
+                                          <div className="flex gap-2">
+                                            <input
+                                              type="text"
+                                              value={containerPath || ''}
+                                              onChange={(e) => {
+                                                const newVols = [...config.volumes];
+                                                newVols[idx] = `${hostPath || './data'}:${e.target.value}`;
+                                                updateServiceConfig(service.name, { volumes: newVols });
+                                              }}
+                                              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                              placeholder="/var/www/html"
+                                            />
+                                            {idx >= (defaultsRef.current[service.name]?.volumes ?? 0) && (
+                                              <button
+                                                type="button"
+                                                onClick={() => removeVolume(service.name, idx)}
+                                                className="p-2 rounded-md border border-slate-200 text-red-500 hover:bg-red-50 hover:border-red-200"
+                                                title="Remove volume"
+                                                aria-label="Remove volume"
+                                              >
+                                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                  <path d="M9 3h6a1 1 0 0 1 .99.86L16 5h4a1 1 0 1 1 0 2h-.99l-.8 12.06A2 2 0 0 1 16.21 21H7.8a2 2 0 0 1-1.99-1.94L5 7H4a1 1 0 0 1 0-2h4l.01-1.14A1 1 0 0 1 9 3Zm6.01 4H8.99l-.7 12h7.42l.3-12Z" />
+                                                  <path d="M10 10a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
+                                                </svg>
+                                              </button>
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
+                                    );
+                                  })}
+                                </div>
                               )}
                               {!config.volumesEnabled && (
                                 <p className="text-sm text-slate-500">Volumes are disabled for this service.</p>

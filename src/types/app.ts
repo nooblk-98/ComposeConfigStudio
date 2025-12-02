@@ -33,6 +33,7 @@ export interface AttachableService {
 export interface ServiceDefinition {
   name: string; // Service name (e.g., "wordpress", "db", "phpmyadmin")
   displayName?: string; // Display name in UI (e.g., "Database")
+  description?: string; // Optional description for the service
   icon?: string; // Optional icon URL for the service (e.g., devicon)
   group?: string; // Optional grouping key (e.g., "database") for mutually exclusive service options
   selectorLabel?: string; // Optional label to show in group selectors
@@ -45,7 +46,7 @@ export interface ServiceDefinition {
   environment?: Record<string, string>; // Environment variables
   volumes?: string[]; // Volume mappings (e.g., ["./wordpress:/var/www/html"])
   dependsOn?: string[]; // Service dependencies
-  optionalEnv?: OptionalEnv[]; // Optional environment variables specific to this service
+  optionalEnv?: OptionalEnvVar[]; // Optional environment variables specific to this service
 }
 
 export interface AppDefinition {
@@ -59,11 +60,12 @@ export interface AppDefinition {
   defaultPort: number;
   image: string;
   tools: Tool[];
-  
+  multiDb?: boolean; // Whether the app supports multiple database types with a selector
+
   // New simplified service-based structure
   services?: ServiceDefinition[]; // All services (main app, database, addons)
   namedVolumes?: string[]; // Named volumes to create (e.g., ["db_data"])
-  
+
   // Legacy fields (keeping for backward compatibility)
   env: Record<string, EnvVar>;
   optionalEnv?: OptionalEnvVar[];
