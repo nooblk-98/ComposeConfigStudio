@@ -576,7 +576,6 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                           </div>
                           <div>
                             <h2 className="text-lg font-semibold text-slate-900 capitalize">{service.displayName || service.name}</h2>
-                            <p className="text-sm text-slate-500 font-mono">{service.containerName}</p>
                           </div>
                           {service.mandatory && (
                             <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700 border border-blue-200">
