@@ -377,27 +377,30 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                     </div>
 
                     {config.enabled && (
-                      <div className="grid gap-4 px-5 py-5 lg:grid-cols-[1.05fr_1.4fr] bg-slate-50">
-                        <div className="space-y-3">
-                          <label className="block text-base font-semibold text-slate-900">Container name</label>
-                          <input
-                            type="text"
-                            value={config.containerName}
-                            onChange={(e) => updateServiceConfig(service.name, { containerName: e.target.value })}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                            placeholder={service.containerName}
-                          />
-
-                          <label className="block text-base font-semibold text-slate-900">Docker image</label>
-                          <select
-                            value={config.selectedImage}
-                            onChange={(e) => updateServiceConfig(service.name, { selectedImage: e.target.value })}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                          >
-                            {service.images.map(img => (
-                              <option key={img} value={img} className="bg-white text-slate-900">{img}</option>
-                            ))}
-                          </select>
+                      <div className="space-y-6 px-5 py-5 bg-slate-50">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <label className="block text-base font-semibold text-slate-900">Container name</label>
+                            <input
+                              type="text"
+                              value={config.containerName}
+                              onChange={(e) => updateServiceConfig(service.name, { containerName: e.target.value })}
+                              className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                              placeholder={service.containerName}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="block text-base font-semibold text-slate-900">Docker image</label>
+                            <select
+                              value={config.selectedImage}
+                              onChange={(e) => updateServiceConfig(service.name, { selectedImage: e.target.value })}
+                              className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                            >
+                              {service.images.map(img => (
+                                <option key={img} value={img} className="bg-white text-slate-900">{img}</option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
 
                         <div className="space-y-4">
@@ -418,9 +421,9 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                   + Add
                                 </button>
                               </div>
-                              <div className="space-y-2">
+                              <div className="space-y-3">
                                 {Object.entries(config.environment).map(([key, value]) => (
-                                  <div key={key} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 items-center">
+                                  <div key={key} className="grid grid-cols-[1.1fr_1fr_auto] gap-3 items-center">
                                     <div className="flex">
                                       {defaultsRef.current[service.name]?.envKeys.has(key) ? (
                                         <span className="inline-flex h-11 min-w-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-mono text-slate-800" title={key}>{key}</span>
@@ -434,29 +437,25 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                         />
                                       )}
                                     </div>
-                                    <div className="flex">
-                                      <input
-                                        type={key.toLowerCase().includes('password') ? 'password' : 'text'}
-                                        value={value}
-                                        onChange={(e) => updateEnv(service.name, key, e.target.value)}
-                                        className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                      />
-                                    </div>
+                                    <input
+                                      type={key.toLowerCase().includes('password') ? 'password' : 'text'}
+                                      value={value}
+                                      onChange={(e) => updateEnv(service.name, key, e.target.value)}
+                                      className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                    />
                                     {defaultsRef.current[service.name]?.envKeys.has(key) ? null : (
-                                      <div className="flex items-center justify-center h-11">
-                                        <button
-                                          type="button"
-                                          onClick={() => removeEnv(service.name, key)}
-                                          className="h-10 w-10 flex items-center justify-center rounded-md border border-slate-200 text-red-500 hover:bg-red-50 hover:border-red-200"
-                                          title="Remove variable"
-                                          aria-label="Remove variable"
-                                        >
-                                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                            <path d="M9 3h6a1 1 0 0 1 .99.86L16 5h4a1 1 0 1 1 0 2h-.99l-.8 12.06A2 2 0 0 1 16.21 21H7.8a2 2 0 0 1-1.99-1.94L5 7H4a1 1 0 0 1 0-2h4l.01-1.14A1 1 0 0 1 9 3Zm6.01 4H8.99l-.7 12h7.42l.3-12Z" />
-                                            <path d="M10 10a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
-                                          </svg>
-                                        </button>
-                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => removeEnv(service.name, key)}
+                                        className="h-11 w-11 flex items-center justify-center rounded-md border border-slate-200 text-red-500 hover:bg-red-50 hover:border-red-200"
+                                        title="Remove variable"
+                                        aria-label="Remove variable"
+                                      >
+                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                          <path d="M9 3h6a1 1 0 0 1 .99.86L16 5h4a1 1 0 1 1 0 2h-.99l-.8 12.06A2 2 0 0 1 16.21 21H7.8a2 2 0 0 1-1.99-1.94L5 7H4a1 1 0 0 1 0-2h4l.01-1.14A1 1 0 0 1 9 3Zm6.01 4H8.99l-.7 12h7.42l.3-12Z" />
+                                          <path d="M10 10a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
+                                        </svg>
+                                      </button>
                                     )}
                                   </div>
                                 ))}
