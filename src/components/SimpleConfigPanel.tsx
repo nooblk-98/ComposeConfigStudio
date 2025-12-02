@@ -198,7 +198,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
   };
 
   return (
-    <div className="min-h-screen bg-slate-950/60">
+    <div className="relative min-h-screen bg-slate-950">
       <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 opacity-90" aria-hidden />
       <div className="relative max-w-7xl mx-auto px-6 py-8 space-y-6">
         <div className="flex items-center gap-3 text-slate-200">
