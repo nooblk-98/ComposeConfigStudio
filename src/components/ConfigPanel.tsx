@@ -598,7 +598,7 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
 
 
         {/* Runner */}
-        {app.features.runner && (
+        {app.features?.runner && (
           <section className="bg-white shadow-sm border border-gray-200 rounded-xl p-6 mb-6 transition-all hover:shadow-md">
             <h2 className="text-xl font-bold mb-4 text-gray-900">Runner</h2>
             <div className="flex items-center">
