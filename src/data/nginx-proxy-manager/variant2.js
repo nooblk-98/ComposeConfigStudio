@@ -25,15 +25,13 @@ export default {
       environment: {
         TZ: "UTC",
         DB_MYSQL_HOST: "mariadb",
-        DB_MYSQL_PORT: "3306",
         DB_MYSQL_USER: "npm",
         DB_MYSQL_PASSWORD: "npm",
         DB_MYSQL_NAME: "npm"
       },
-    //   optionalEnv: [
-    //     { key: "DISABLE_IPV6", defaultValue: "true", description: "Disable IPv6 support", category: "Network" },
-    //     { key: "X_FRAME_OPTIONS", defaultValue: "sameorigin", description: "X-Frame-Options header", category: "Security" }
-    //   ],
+      optionalEnv: [
+        { key: "DB_MYSQL_PORT", defaultValue: "", description: "Change Only When Use Without default Port", category: "Network" },
+      ],
       volumes: [
         "./data:/data",
         "./letsencrypt:/etc/letsencrypt"
@@ -42,7 +40,7 @@ export default {
     },
     {
       name: "mariadb",
-      mandatory: true,
+      mandatory: false,
       images: [
         "mariadb:latest",
         "mariadb:11",
