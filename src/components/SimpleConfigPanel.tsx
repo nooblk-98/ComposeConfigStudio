@@ -127,7 +127,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
   // Network configuration
   const [networkConfig, setNetworkConfig] = useState({
     enabled: true,
-    name: 'app_network',
+    name: `${app.id}_network`,
     driver: 'bridge',
     ipam: {
       driver: 'default',
