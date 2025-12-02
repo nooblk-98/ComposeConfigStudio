@@ -3,7 +3,7 @@ export default {
   name: "WordPress",
   description: "Popular CMS platform for websites and blogs",
   category: "CMS",
-  logo: "https://e7.pngegg.com/pngimages/510/1010/png-clipart-wordpress-com-blog-wordpress.png",
+  logo: "https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/wordpress.svg",
   version: "latest",
   defaultPort: 8080,
   databases: ["mysql", "mariadb"],

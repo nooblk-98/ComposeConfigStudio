@@ -14,7 +14,7 @@ export default function Home() {
   const [loadingAppId, setLoadingAppId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/apps')
+    fetch('/api/apps', { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         setApps(data.apps);
@@ -30,7 +30,7 @@ export default function Home() {
     setLoadingAppId(app.id);
 
     try {
-      const response = await fetch(`/api/apps/${app.id}`);
+      const response = await fetch(`/api/apps/${app.id}`, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         setSelectedApp(data.app || app);

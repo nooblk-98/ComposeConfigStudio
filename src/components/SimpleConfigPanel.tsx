@@ -366,9 +366,9 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                 <div>
                   <div className="flex items-center gap-3">
                     {app.logo && (
-                      <div className="h-12 w-12 overflow-hidden rounded-xl bg-slate-100 border border-slate-200">
+                      <div className="h-12 w-12 overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={app.logo} alt={app.name} className="h-full w-full object-cover" />
+                        <img src={app.logo} alt={app.name} className="h-full w-full object-contain" />
                       </div>
                     )}
                     <div>

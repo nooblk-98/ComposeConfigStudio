@@ -153,8 +153,18 @@ export default function AppList({ apps, onSelectApp }: AppListProps) {
                   className="bg-white border border-slate-200 hover:border-purple-300 hover:shadow-lg rounded-2xl p-6 text-left transition-all group shadow-sm"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white text-xl font-bold flex-shrink-0 group-hover:scale-105 transition-transform shadow-md">
-                      {app.name.charAt(0)}
+                    <div className="w-14 h-14 flex items-center justify-center text-slate-900 text-xl font-bold flex-shrink-0 group-hover:scale-105 transition-transform overflow-hidden">
+                      {app.logo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={app.logo}
+                          alt={app.name}
+                          className="h-full w-full object-contain"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      ) : (
+                        app.name.charAt(0)
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-base font-bold text-slate-900 mb-1 truncate">{app.name}</h3>
