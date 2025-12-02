@@ -11,7 +11,7 @@ export default {
     { name: "PHP", version: "8.2" },
     { name: "Apache", version: "2.4" }
   ],
-  
+
   services: [
     {
       name: "wordpress",
@@ -26,17 +26,16 @@ export default {
       restart: "always",
       ports: ["8080:80"],
       environment: {
-        WORDPRESS_DB_HOST: "db",
+        WORDPRESS_DB_HOST: "database",
         WORDPRESS_DB_USER: "wordpress",
         WORDPRESS_DB_PASSWORD: "wordpress",
         WORDPRESS_DB_NAME: "wordpress"
       },
       volumes: ["./wordpress:/var/www/html"],
-      dependsOn: ["db"]
+      dependsOn: ["database"]
     },
     {
       name: "database",
-      displayName: "Database",
       mandatory: false,
       images: [
         "mariadb:10.6",
@@ -46,7 +45,7 @@ export default {
         "mysql:5.7"
       ],
       defaultImage: "mariadb:10.6",
-      containerName: "wordpress_db",
+      containerName: "database",
       restart: "always",
       ports: [],
       environment: {
@@ -65,15 +64,15 @@ export default {
         "phpmyadmin/phpmyadmin:5.2"
       ],
       defaultImage: "phpmyadmin/phpmyadmin:latest",
-      containerName: "wordpress_phpmyadmin",
+      containerName: "phpmyadmin",
       restart: "always",
       ports: ["8081:80"],
       environment: {
-        PMA_HOST: "db",
+        PMA_HOST: "database",
         PMA_USER: "root",
         PMA_PASSWORD: "root"
       },
-      dependsOn: ["db"]
+      dependsOn: ["database"]
     }
   ],
   
