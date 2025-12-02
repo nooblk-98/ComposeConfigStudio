@@ -5,7 +5,7 @@ import { AppDefinition } from '@/types/app';
 
 interface AppListProps {
   apps: AppDefinition[];
-  onSelectApp: (app: AppDefinition) => void;
+  onSelectApp: (app: AppDefinition) => void | Promise<void>;
 }
 
 export default function AppList({ apps, onSelectApp }: AppListProps) {
