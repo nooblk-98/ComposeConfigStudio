@@ -27,7 +27,7 @@ export default {
       restart: "always",
       ports: ["80:80", "81:81", "443:443"],
       environment: {
-        TZ: "UTC",
+        TZ: "Asia/Colombo",
         DB_SQLITE_FILE: "/data/database.sqlite"
       },
       volumes: [
