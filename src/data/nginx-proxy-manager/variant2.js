@@ -25,9 +25,9 @@ export default {
       environment: {
         TZ: "UTC",
         DB_MYSQL_HOST: "mariadb",
-        DB_MYSQL_USER: "npm",
-        DB_MYSQL_PASSWORD: "npm",
-        DB_MYSQL_NAME: "npm"
+        DB_MYSQL_USER: "dbuser",
+        DB_MYSQL_PASSWORD: "user@123+",
+        DB_MYSQL_NAME: "nginxproxymanager"
       },
       optionalEnv: [
         { key: "DB_MYSQL_PORT", defaultValue: "", description: "Change Only When Use Without default Port", category: "Network" },
@@ -53,7 +53,7 @@ export default {
       restart: "always",
       ports: [],
       environment: {
-        MYSQL_ROOT_PASSWORD: "${nginx_proxy_manager.DB_MYSQL_PASSWORD}",
+        MYSQL_ROOT_PASSWORD: "root@123+",
         MYSQL_DATABASE: "${nginx_proxy_manager.DB_MYSQL_NAME}",
         MYSQL_USER: "${nginx_proxy_manager.DB_MYSQL_USER}",
         MYSQL_PASSWORD: "${nginx_proxy_manager.DB_MYSQL_PASSWORD}"

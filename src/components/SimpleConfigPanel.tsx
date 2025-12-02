@@ -135,6 +135,30 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
     return typeof originalValue === 'string' && /^\$\{(\w+)\.(\w+)\}$/.test(originalValue);
   };
 
+  // Generate a random secure password
+  const generatePassword = (length: number = 16): string => {
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const symbols = '!@#$%^&*-_=+';
+    const allChars = uppercase + lowercase + numbers + symbols;
+    
+    let password = '';
+    // Ensure at least one of each type
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += symbols[Math.floor(Math.random() * symbols.length)];
+    
+    // Fill the rest randomly
+    for (let i = password.length; i < length; i++) {
+      password += allChars[Math.floor(Math.random() * allChars.length)];
+    }
+    
+    // Shuffle the password
+    return password.split('').sort(() => Math.random() - 0.5).join('');
+  };
+
   const updateServiceConfig = (serviceName: string, updates: Partial<ServiceConfig>) => {
     setServiceConfigs(prev => ({
       ...prev,
@@ -714,13 +738,35 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                         onChange={(e) => updateEnv(service.name, key, e.target.value)}
                                         readOnly={isLinked}
                                         disabled={isLinked}
-                                        className={`w-full h-11 rounded-lg border px-3 pr-10 text-sm placeholder:text-slate-400 focus:outline-none ${
+                                        className={`w-full h-11 rounded-lg border px-3 text-sm placeholder:text-slate-400 focus:outline-none ${
+                                          key.toLowerCase().includes('password') && !isLinked ? 'pr-20' : 'pr-10'
+                                        } ${
                                           isLinked 
                                             ? 'border-blue-200 bg-blue-50/50 text-blue-900 cursor-not-allowed' 
                                             : 'border-slate-200 bg-white text-slate-900 focus:border-purple-400 focus:ring-2 focus:ring-purple-500/40'
                                         }`}
                                         title={isLinked ? 'This value is automatically synced from another service' : ''}
                                       />
+                                      {key.toLowerCase().includes('password') && !isLinked && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const newPassword = generatePassword();
+                                            updateEnv(service.name, key, newPassword);
+                                            setShowPasswords(prev => ({
+                                              ...prev,
+                                              [`${service.name}_${key}`]: true
+                                            }));
+                                          }}
+                                          className="absolute right-10 top-1/2 -translate-y-1/2 text-purple-600 hover:text-purple-800"
+                                          title="Generate random password"
+                                          aria-label="Generate random password"
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                          </svg>
+                                        </button>
+                                      )}
                                       {key.toLowerCase().includes('password') && (
                                         <button
                                           type="button"
