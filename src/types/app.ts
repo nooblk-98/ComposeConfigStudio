@@ -39,6 +39,8 @@ export interface AppConfig {
   port: number;
   env: Record<string, string>;
   volumes: Record<string, boolean>;
+  // Per-named volume override paths
+  volumeOverrides?: Record<string, { hostPath: string; containerPath: string }>;
   database: string;
   adminName: string;
   adminEmail: string;

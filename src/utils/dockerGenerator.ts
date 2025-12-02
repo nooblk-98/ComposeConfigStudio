@@ -7,7 +7,17 @@ export function generateDockerCompose(app: AppDefinition, config: AppConfig): st
   const volumes: string[] = [];
   Object.entries(config.volumes).forEach(([key, enabled]) => {
     if (enabled && app.volumes[key]) {
-      volumes.push(`      - ${serviceName}_${key}:${app.volumes[key].path}`);
+        const override = config.volumeOverrides?.[key];
+        if (override) {
+          // If hostPath provided treat as bind mount, else named volume
+          if (override.hostPath) {
+            volumes.push(`      - ${override.hostPath}:${override.containerPath || app.volumes[key].path}`);
+          } else {
+            volumes.push(`      - ${serviceName}_${key}:${override.containerPath || app.volumes[key].path}`);
+          }
+        } else {
+          volumes.push(`      - ${serviceName}_${key}:${app.volumes[key].path}`);
+        }
     }
   });
 
@@ -85,7 +95,16 @@ export function generateDockerRun(app: AppDefinition, config: AppConfig): string
   // Add volumes
   Object.entries(config.volumes).forEach(([key, enabled]) => {
     if (enabled && app.volumes[key]) {
-      command += ` \\\n  -v ${containerName}_${key}:${app.volumes[key].path}`;
+        const override = config.volumeOverrides?.[key];
+        if (override) {
+          if (override.hostPath) {
+            command += ` \\\n  -v ${override.hostPath}:${override.containerPath || app.volumes[key].path}`;
+          } else {
+            command += ` \\\n  -v ${containerName}_${key}:${override.containerPath || app.volumes[key].path}`;
+          }
+        } else {
+          command += ` \\\n  -v ${containerName}_${key}:${app.volumes[key].path}`;
+        }
     }
   });
     // Custom port mappings

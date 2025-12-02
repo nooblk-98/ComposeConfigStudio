@@ -16,6 +16,7 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
     port: app.defaultPort,
     env: {},
     volumes: {},
+    volumeOverrides: {},
     database: app.databases[0],
     adminName: app.env.SEMAPHORE_ADMIN_NAME?.value || 'Admin',
     adminEmail: app.env.SEMAPHORE_ADMIN_EMAIL?.value || 'admin@localhost',
@@ -132,7 +133,10 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
               <input
                 type="text"
                 value={config.name}
-                onChange={(e) => updateConfig({ name: e.target.value })}
+                onChange={(e) => {
+                  console.log('Name change', e.target.value);
+                  updateConfig({ name: e.target.value });
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -143,7 +147,11 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
               <input
                 type="number"
                 value={config.port}
-                onChange={(e) => updateConfig({ port: parseInt(e.target.value) })}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  console.log('Port change', val);
+                  updateConfig({ port: val });
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -169,6 +177,51 @@ export default function ConfigPanel({ app }: ConfigPanelProps) {
                   </label>
                   <div className="text-sm text-gray-600">{volume.path}</div>
                   <div className="text-xs text-gray-500">{volume.description}</div>
+                  {config.volumes[key] && (
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">Host path (optional)</label>
+                        <input
+                          type="text"
+                          placeholder={`e.g. ./data/${key}`}
+                          value={config.volumeOverrides?.[key]?.hostPath || ''}
+                          onChange={(e) => {
+                            const hostPath = e.target.value;
+                            updateConfig({
+                              volumeOverrides: {
+                                ...config.volumeOverrides,
+                                [key]: {
+                                  hostPath,
+                                  containerPath: config.volumeOverrides?.[key]?.containerPath || volume.path
+                                }
+                              }
+                            });
+                          }}
+                          className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">Container path</label>
+                        <input
+                          type="text"
+                          value={config.volumeOverrides?.[key]?.containerPath || volume.path}
+                          onChange={(e) => {
+                            const containerPath = e.target.value;
+                            updateConfig({
+                              volumeOverrides: {
+                                ...config.volumeOverrides,
+                                [key]: {
+                                  hostPath: config.volumeOverrides?.[key]?.hostPath || '',
+                                  containerPath
+                                }
+                              }
+                            });
+                          }}
+                          className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
