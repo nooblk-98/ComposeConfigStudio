@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AppDefinition } from '@/types/app';
 
 interface SimpleConfigPanelProps {
@@ -57,8 +57,17 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
   // Initialize service configs
   const [serviceConfigs, setServiceConfigs] = useState<Record<string, ServiceConfig>>(() => {
     const configs: Record<string, ServiceConfig> = {};
+    const firstInGroup: Record<string, boolean> = {};
 
     app.services?.forEach(service => {
+      const inGroup = service.group;
+      const shouldEnable = inGroup
+        ? !firstInGroup[inGroup]
+        : service.mandatory;
+      if (inGroup && !firstInGroup[inGroup]) {
+        firstInGroup[inGroup] = true;
+      }
+
       if (!defaultsRef.current[service.name]) {
         defaultsRef.current[service.name] = {
           envKeys: new Set(Object.keys(service.environment || {})),
@@ -67,7 +76,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
         };
       }
       configs[service.name] = {
-        enabled: service.mandatory,
+        enabled: shouldEnable,
         selectedImage: service.defaultImage,
         containerName: service.containerName,
         environment: { ...service.environment },
@@ -91,6 +100,70 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
       [serviceName]: { ...prev[serviceName], ...updates }
     }));
   };
+
+  const setGroupSelection = (group: string, selectedService: string) => {
+    setServiceConfigs(prev => {
+      const next = { ...prev };
+      // Toggle services in the group
+      app.services
+        ?.filter(s => s.group === group)
+        .forEach(s => {
+          next[s.name] = {
+            ...next[s.name],
+            enabled: s.name === selectedService
+          };
+        });
+
+      // Sync DB env into the primary app service if this is the database group
+      if (group === 'database') {
+        const primaryService = app.services?.find(s => !s.group);
+        if (primaryService && next[primaryService.name]) {
+          const selectedConfig = next[selectedService];
+          const cleanedEnv: Record<string, string> = { ...next[primaryService.name].environment };
+
+          // Remove any env keys that belong to any database option
+          const dbEnvKeys = new Set<string>();
+          app.services
+            ?.filter(s => s.group === group)
+            .forEach(s => Object.keys(s.environment || {}).forEach(k => dbEnvKeys.add(k)));
+
+          Object.keys(cleanedEnv).forEach(k => {
+            if (dbEnvKeys.has(k) || k.startsWith('DB_') || k.startsWith('MYSQL_') || k.startsWith('POSTGRES')) {
+              delete cleanedEnv[k];
+            }
+          });
+
+          Object.entries(selectedConfig.environment).forEach(([k, v]) => {
+            cleanedEnv[k] = v;
+          });
+          next[primaryService.name] = {
+            ...next[primaryService.name],
+            environment: cleanedEnv
+          };
+        }
+      }
+
+      return next;
+    });
+  };
+
+  // Initialize grouped service selections (to sync env/volumes from non-image services)
+  useEffect(() => {
+    const groups = app.services?.reduce<Record<string, string>>((acc, svc) => {
+      if (svc.group) {
+        const cfg = serviceConfigs[svc.name];
+        if (cfg?.enabled && !acc[svc.group]) {
+          acc[svc.group] = svc.name;
+        }
+      }
+      return acc;
+    }, {}) || {};
+
+    Object.entries(groups).forEach(([group, svcName]) => {
+      setGroupSelection(group, svcName);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const updateEnv = (serviceName: string, key: string, value: string) => {
     setServiceConfigs(prev => ({
@@ -178,6 +251,8 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
     if (!enabledServices || enabledServices.length === 0) return '';
 
     const parts: string[] = [];
+    const primaryService = app.services?.find(s => !s.group);
+    const extraVolumes: string[] = [];
 
     if (networkConfig.enabled) {
       parts.push(`# Create network once\ndocker network create ${networkConfig.name} || true`);
@@ -185,6 +260,15 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
 
     enabledServices.forEach(service => {
       const config = serviceConfigs[service.name];
+      if (!config.selectedImage?.trim()) {
+        if (config.volumesEnabled) {
+          config.volumes.forEach(v => {
+            const trimmed = v.trim();
+            if (trimmed) extraVolumes.push(trimmed);
+          });
+        }
+        return;
+      }
       let cmd = `docker run -d --name ${config.containerName}`;
 
       if (networkConfig.enabled) {
@@ -229,6 +313,9 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
           cmd += ` -v ${trimmed}`;
         }
       });
+      if (primaryService && service.name === primaryService.name && extraVolumes.length > 0) {
+        extraVolumes.forEach(v => cmd += ` -v ${v}`);
+      }
 
       cmd += ` ${config.selectedImage}`;
       parts.push(cmd);
@@ -241,10 +328,25 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
     const enabledServices = app.services?.filter(s => serviceConfigs[s.name]?.enabled);
     if (!enabledServices) return '';
 
+    const enabledServiceNamesWithImages = enabledServices
+      .filter(s => (serviceConfigs[s.name]?.selectedImage || '').trim().length > 0)
+      .map(s => s.name);
+    const primaryService = app.services?.find(s => !s.group);
+    const extraVolumes: string[] = [];
+
     let yaml = 'version: "3.8"\n\nservices:\n';
 
     enabledServices.forEach(service => {
       const config = serviceConfigs[service.name];
+      if (!config.selectedImage?.trim()) {
+        if (config.volumesEnabled) {
+          config.volumes.forEach(v => {
+            const trimmed = v.trim();
+            if (trimmed) extraVolumes.push(trimmed);
+          });
+        }
+        return;
+      }
       yaml += `  ${service.name}:\n`;
       yaml += `    image: ${config.selectedImage}\n`;
       yaml += `    container_name: ${config.containerName}\n`;
@@ -279,6 +381,12 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
           config.volumes.forEach(vol => yaml += `      - ${vol}\n`);
         }
       }
+      if (primaryService && service.name === primaryService.name && extraVolumes.length > 0) {
+        if (!config.volumesEnabled || config.volumes.length === 0) {
+          yaml += `    volumes:\n`;
+        }
+        extraVolumes.forEach(vol => yaml += `      - ${vol}\n`);
+      }
 
       if (config.resourceLimits.enabled && (config.resourceLimits.memory || config.resourceLimits.cpus)) {
         yaml += `    deploy:\n`;
@@ -312,8 +420,11 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
     });
 
     if (app.namedVolumes && app.namedVolumes.length > 0) {
-      yaml += 'volumes:\n';
-      app.namedVolumes.forEach(vol => yaml += `  ${vol}:\n`);
+      const usedVolumes = app.namedVolumes.filter(v => enabledServiceNamesWithImages.includes(v));
+      if (usedVolumes.length > 0) {
+        yaml += 'volumes:\n';
+        usedVolumes.forEach(vol => yaml += `  ${vol}:\n`);
+      }
     }
 
     // Add network definition
@@ -405,10 +516,50 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
             </div>
 
             <div className="space-y-5">
+              {/* Group selectors (e.g., database options) */}
+              {app.services && (
+                Object.entries(
+                  app.services.reduce<Record<string, { name: string; displayName?: string }[]>>((acc, svc) => {
+                    if (svc.group) {
+                      acc[svc.group] = acc[svc.group] || [];
+                      acc[svc.group].push({ name: svc.name, displayName: svc.displayName });
+                    }
+                    return acc;
+                  }, {})
+                ).map(([group, services]) => (
+                  services.length > 1 && (
+                    <div key={group} className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
+                      <p className="text-sm font-semibold text-slate-900 mb-3 capitalize">Database settings</p>
+                      <div className="flex border border-slate-200 rounded-lg overflow-hidden w-full max-w-xl">
+                        {services.map((s, idx) => {
+                          const isActive = serviceConfigs[s.name]?.enabled;
+                          const isLast = idx === services.length - 1;
+                          return (
+                            <button
+                              key={s.name}
+                              onClick={() => setGroupSelection(group, s.name)}
+                              className={`flex-1 px-4 py-2 text-sm font-medium transition-colors border-r border-slate-200 last:border-r-0 ${
+                                isActive
+                                  ? 'bg-emerald-500 text-white'
+                                  : 'bg-white text-slate-700 hover:bg-slate-50'
+                              } ${isLast ? 'last:border-r-0' : ''}`}
+                            >
+                              {s.displayName || s.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )
+                ))
+              )}
+
               {app.services?.map((service) => {
                 const config = serviceConfigs[service.name];
                 if (!config) return null;
+                if (service.group && !config.enabled) return null;
                 const iconUrl = getServiceIcon(service);
+                const hasImage = !!config.selectedImage?.trim();
 
                 return (
                   <div key={service.name} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -438,13 +589,18 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                               Required
                             </span>
                           )}
+                          {service.group && (
+                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 border border-slate-200">
+                              {service.group}
+                            </span>
+                          )}
                         </div>
                         {service.description && (
                           <p className="mt-2 text-sm text-slate-600">{service.description}</p>
                         )}
                       </div>
 
-                      {!service.mandatory && (
+                      {!service.mandatory && !service.group && (
                         <label className="relative inline-flex cursor-pointer items-center">
                           <input
                             type="checkbox"
@@ -459,30 +615,32 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
 
                     {config.enabled && (
                       <div className="space-y-6 px-5 py-5 bg-slate-50">
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <div className="space-y-2">
-                            <label className="block text-base font-semibold text-slate-900">Container name</label>
-                            <input
-                              type="text"
-                              value={config.containerName}
-                              onChange={(e) => updateServiceConfig(service.name, { containerName: e.target.value })}
-                              className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                              placeholder={service.containerName}
-                            />
+                        {hasImage && (
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="space-y-2">
+                              <label className="block text-base font-semibold text-slate-900">Container name</label>
+                              <input
+                                type="text"
+                                value={config.containerName}
+                                onChange={(e) => updateServiceConfig(service.name, { containerName: e.target.value })}
+                                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                placeholder={service.containerName}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="block text-base font-semibold text-slate-900">Docker image</label>
+                              <select
+                                value={config.selectedImage}
+                                onChange={(e) => updateServiceConfig(service.name, { selectedImage: e.target.value })}
+                                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                              >
+                                {service.images.map(img => (
+                                  <option key={img} value={img} className="bg-white text-slate-900">{img}</option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
-                          <div className="space-y-2">
-                            <label className="block text-base font-semibold text-slate-900">Docker image</label>
-                            <select
-                              value={config.selectedImage}
-                              onChange={(e) => updateServiceConfig(service.name, { selectedImage: e.target.value })}
-                              className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                            >
-                              {service.images.map(img => (
-                                <option key={img} value={img} className="bg-white text-slate-900">{img}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
+                        )}
 
                         <div className="space-y-4">
                           {Object.keys(config.environment).length > 0 && (
@@ -749,47 +907,49 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                             </div>
                           )}
 
-                          <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <span className="text-base font-semibold text-slate-900">Resource limits</span>
-                                <p className="text-sm text-slate-500">Optional CPU/Memory caps for this container.</p>
+                          {hasImage && (
+                            <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <span className="text-base font-semibold text-slate-900">Resource limits</span>
+                                  <p className="text-sm text-slate-500">Optional CPU/Memory caps for this container.</p>
+                                </div>
+                                <label className="relative inline-flex cursor-pointer items-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={config.resourceLimits.enabled}
+                                    onChange={(e) => updateServiceConfig(service.name, { resourceLimits: { ...config.resourceLimits, enabled: e.target.checked } })}
+                                    className="peer sr-only"
+                                  />
+                                  <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
+                                </label>
                               </div>
-                              <label className="relative inline-flex cursor-pointer items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={config.resourceLimits.enabled}
-                                  onChange={(e) => updateServiceConfig(service.name, { resourceLimits: { ...config.resourceLimits, enabled: e.target.checked } })}
-                                  className="peer sr-only"
-                                />
-                                <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
-                              </label>
+                              {config.resourceLimits.enabled && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  <div className="space-y-1">
+                                    <label className="block text-sm font-semibold text-slate-800">Memory</label>
+                                    <input
+                                      type="text"
+                                      value={config.resourceLimits.memory}
+                                      onChange={(e) => updateServiceConfig(service.name, { resourceLimits: { ...config.resourceLimits, memory: e.target.value } })}
+                                      className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                      placeholder="512m or 1g"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="block text-sm font-semibold text-slate-800">CPUs</label>
+                                    <input
+                                      type="text"
+                                      value={config.resourceLimits.cpus}
+                                      onChange={(e) => updateServiceConfig(service.name, { resourceLimits: { ...config.resourceLimits, cpus: e.target.value } })}
+                                      className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                      placeholder="0.5 or 2"
+                                    />
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                            {config.resourceLimits.enabled && (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                  <label className="block text-sm font-semibold text-slate-800">Memory</label>
-                                  <input
-                                    type="text"
-                                    value={config.resourceLimits.memory}
-                                    onChange={(e) => updateServiceConfig(service.name, { resourceLimits: { ...config.resourceLimits, memory: e.target.value } })}
-                                    className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                    placeholder="512m or 1g"
-                                  />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="block text-sm font-semibold text-slate-800">CPUs</label>
-                                  <input
-                                    type="text"
-                                    value={config.resourceLimits.cpus}
-                                    onChange={(e) => updateServiceConfig(service.name, { resourceLimits: { ...config.resourceLimits, cpus: e.target.value } })}
-                                    className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                    placeholder="0.5 or 2"
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                          )}
                         </div>
                       </div>
                     )}

@@ -24,32 +24,11 @@ export const appsList = [
     logo: "https://nginxproxymanager.com/logo.svg"
   },
   {
-    id: "redis",
-    name: "Redis",
-    category: "Database",
-    description: "In-memory data structure store, cache, and message broker",
-    logo: "https://cdn.worldvectorlogo.com/logos/redis.svg"
-  },
-  {
-    id: "plex",
-    name: "Plex Media Server",
-    category: "Media",
-    description: "Stream your media library to any device",
-    logo: "https://www.plex.tv/wp-content/uploads/2018/01/plex-logo-dark.svg"
-  },
-  {
     id: "uptime-kuma",
     name: "Uptime Kuma",
     category: "Monitoring",
     description: "Self-hosted monitoring tool like Uptime Robot",
     logo: "https://uptime.kuma.pet/img/icon.svg"
-  },
-  {
-    id: "traefik",
-    name: "Traefik",
-    category: "Networking",
-    description: "Modern HTTP reverse proxy and load balancer",
-    logo: "https://raw.githubusercontent.com/traefik/traefik/master/docs/content/assets/img/traefik.logo.png"
   }
 ];
 
