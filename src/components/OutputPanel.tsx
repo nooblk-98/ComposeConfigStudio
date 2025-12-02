@@ -99,25 +99,25 @@ export default function OutputPanel({ app, config, updateConfig }: OutputPanelPr
   };
 
   return (
-    <div className="w-1/2 bg-gray-900 flex flex-col">
+    <div className="w-1/2 bg-white border-l border-gray-200 flex flex-col">
       {/* Tabs */}
-      <div className="flex border-b border-gray-700">
+      <div className="flex border-b border-gray-200">
         <button
           onClick={() => setActiveTab('command')}
-          className={`px-6 py-3 font-medium transition-colors ${
+          className={`px-6 py-3 font-bold text-sm transition-colors ${
             activeTab === 'command'
-              ? 'text-white bg-gray-800 border-b-2 border-blue-500'
-              : 'text-gray-400 hover:text-white'
+              ? 'text-purple-600 bg-purple-50 border-b-2 border-purple-600'
+              : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
           }`}
         >
           Docker command
         </button>
         <button
           onClick={() => setActiveTab('compose')}
-          className={`px-6 py-3 font-medium transition-colors ${
+          className={`px-6 py-3 font-bold text-sm transition-colors ${
             activeTab === 'compose'
-              ? 'text-white bg-gray-800 border-b-2 border-blue-500'
-              : 'text-gray-400 hover:text-white'
+              ? 'text-purple-600 bg-purple-50 border-b-2 border-purple-600'
+              : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
           }`}
         >
           Docker Compose
@@ -125,11 +125,11 @@ export default function OutputPanel({ app, config, updateConfig }: OutputPanelPr
       </div>
 
       {/* Action Bar */}
-      <div className="p-4 bg-gray-800 flex flex-wrap gap-3 justify-between items-center">
+      <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-wrap gap-3 justify-between items-center">
         <div className="flex gap-2">
           <button
             onClick={copyToClipboard}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg shadow-sm transition-all flex items-center gap-2"
           >
             {copied ? (
               <>
@@ -151,14 +151,14 @@ export default function OutputPanel({ app, config, updateConfig }: OutputPanelPr
             <>
               <button
                 onClick={() => { setEditable(e => !e); setComposeDraft(dockerCompose); setParseError(null); }}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md text-sm"
+                className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg text-sm shadow-sm transition-all"
               >
                 {editable ? 'Cancel edit' : 'Edit YAML'}
               </button>
               {editable && (
                 <button
                   onClick={handleSaveCompose}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm"
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg text-sm shadow-sm transition-all"
                 >
                   Save YAML
                 </button>
@@ -166,7 +166,7 @@ export default function OutputPanel({ app, config, updateConfig }: OutputPanelPr
             </>
           )}
         </div>
-        {parseError && <div className="text-red-400 text-xs">{parseError}</div>}
+        {parseError && <div className="text-red-500 text-xs font-medium bg-red-50 px-2 py-1 rounded border border-red-200">{parseError}</div>}
       </div>
 
       {/* Editor */}
@@ -177,7 +177,7 @@ export default function OutputPanel({ app, config, updateConfig }: OutputPanelPr
             defaultLanguage="yaml"
             value={editable ? composeDraft : dockerCompose}
             onChange={(val) => editable && val !== undefined && setComposeDraft(val)}
-            theme="vs-dark"
+            theme="light"
             options={{
               readOnly: !editable,
               minimap: { enabled: false },
@@ -193,7 +193,7 @@ export default function OutputPanel({ app, config, updateConfig }: OutputPanelPr
             height="100%"
             defaultLanguage="shell"
             value={dockerCommand}
-            theme="vs-dark"
+            theme="light"
             options={{
               readOnly: true,
               minimap: { enabled: false },

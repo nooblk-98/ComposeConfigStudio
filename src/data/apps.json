@@ -6,7 +6,7 @@
       "version": "latest",
       "description": "Popular CMS platform for websites and blogs",
       "category": "CMS",
-      "logo": "https://s.w.org/style/images/about/WordPress-logotype-wmark.png",
+      "logo": "https://e7.pngegg.com/pngimages/510/1010/png-clipart-wordpress-com-blog-wordpress.png",
       "versions": ["latest", "6.4", "6.3"],
       "defaultPort": 80,
       "image": "wordpress",
@@ -36,6 +36,26 @@
           "description": "Database name"
         }
       },
+      "optionalEnv": [
+        {
+          "key": "WORDPRESS_TABLE_PREFIX",
+          "defaultValue": "wp_",
+          "description": "Database table prefix",
+          "category": "Database"
+        },
+        {
+          "key": "WORDPRESS_DEBUG",
+          "defaultValue": "0",
+          "description": "Enable debug mode (1 or 0)",
+          "category": "Development"
+        },
+        {
+          "key": "WORDPRESS_CONFIG_EXTRA",
+          "defaultValue": "",
+          "description": "Extra PHP code for wp-config.php",
+          "category": "Advanced"
+        }
+      ],
       "volumes": {
         "data": {
           "path": "/var/www/html",
@@ -46,37 +66,22 @@
       "databases": ["mysql"],
       "features": {
         "runner": false
-      }
-    },
-    {
-      "id": "nginx-proxy-manager",
-      "name": "Nginx Proxy Manager",
-      "version": "latest",
-      "description": "Easy-to-use reverse proxy with SSL certificate management",
-      "category": "Networking",
-      "logo": "https://nginxproxymanager.com/icon.png",
-      "versions": ["latest", "2.10", "2.9"],
-      "defaultPort": 81,
-      "image": "jc21/nginx-proxy-manager",
-      "tools": [
-        { "name": "Nginx", "version": "latest" },
-        { "name": "Let's Encrypt", "version": "integrated" }
-      ],
-      "env": {},
-      "volumes": {
-        "data": {
-          "path": "/data",
-          "description": "Configuration and certificates"
-        },
-        "letsencrypt": {
-          "path": "/etc/letsencrypt",
-          "description": "Let's Encrypt certificates"
-        }
       },
-      "databases": [],
-      "features": {
-        "runner": false
-      }
+      "needs_db": true,
+      "supports_external_db": true,
+      "attachable_services": [
+        {
+          "id": "phpmyadmin",
+          "name": "phpMyAdmin",
+          "image": "phpmyadmin/phpmyadmin",
+          "defaultPort": 8080,
+          "description": "Web interface for MySQL/MariaDB",
+          "env": {
+            "PMA_HOST": "db",
+            "PMA_PORT": "3306"
+          }
+        }
+      ]
     },
     {
       "id": "grafana",
@@ -103,6 +108,32 @@
           "description": "Admin password"
         }
       },
+      "optionalEnv": [
+        {
+          "key": "GF_INSTALL_PLUGINS",
+          "defaultValue": "",
+          "description": "Comma-separated list of plugins to install",
+          "category": "Plugins"
+        },
+        {
+          "key": "GF_SERVER_ROOT_URL",
+          "defaultValue": "http://localhost:3000",
+          "description": "Full public URL",
+          "category": "Server"
+        },
+        {
+          "key": "GF_SECURITY_ALLOW_EMBEDDING",
+          "defaultValue": "false",
+          "description": "Allow embedding in iframe",
+          "category": "Security"
+        },
+        {
+          "key": "GF_USERS_ALLOW_SIGN_UP",
+          "defaultValue": "false",
+          "description": "Allow user sign up",
+          "category": "Users"
+        }
+      ],
       "volumes": {
         "data": {
           "path": "/var/lib/grafana",
@@ -112,127 +143,9 @@
       "databases": ["sqlite", "mysql", "postgres"],
       "features": {
         "runner": false
-      }
-    },
-    {
-      "id": "plex",
-      "name": "Plex Media Server",
-      "version": "latest",
-      "description": "Stream your media to any device",
-      "category": "Media",
-      "logo": "https://www.plex.tv/wp-content/themes/plex/assets/img/plex-logo.svg",
-      "versions": ["latest"],
-      "defaultPort": 32400,
-      "image": "plexinc/pms-docker",
-      "tools": [
-        { "name": "Plex", "version": "latest" }
-      ],
-      "env": {
-        "PLEX_CLAIM": {
-          "key": "PLEX_CLAIM",
-          "value": "",
-          "description": "Plex claim token from plex.tv/claim"
-        }
       },
-      "volumes": {
-        "config": {
-          "path": "/config",
-          "description": "Plex configuration"
-        },
-        "media": {
-          "path": "/data",
-          "description": "Media files"
-        }
-      },
-      "databases": [],
-      "features": {
-        "runner": false
-      }
-    },
-    {
-      "id": "uptime-kuma",
-      "name": "Uptime Kuma",
-      "version": "latest",
-      "description": "Self-hosted monitoring tool like Uptime Robot",
-      "category": "Monitoring",
-      "logo": "https://uptime.kuma.pet/img/icon.svg",
-      "versions": ["latest", "1.23", "1.22"],
-      "defaultPort": 3001,
-      "image": "louislam/uptime-kuma",
-      "tools": [
-        { "name": "Node.js", "version": "18" }
-      ],
-      "env": {},
-      "volumes": {
-        "data": {
-          "path": "/app/data",
-          "description": "Uptime Kuma data and configuration"
-        }
-      },
-      "databases": [],
-      "features": {
-        "runner": false
-      }
-    },
-    {
-      "id": "redis",
-      "name": "Redis",
-      "version": "latest",
-      "description": "In-memory data structure store and cache",
-      "category": "Database",
-      "logo": "https://redis.io/wp-content/uploads/2024/04/Logotype.svg",
-      "versions": ["latest", "7.2", "7.0"],
-      "defaultPort": 6379,
-      "image": "redis",
-      "tools": [
-        { "name": "Redis", "version": "7.x" }
-      ],
-      "env": {
-        "REDIS_PASSWORD": {
-          "key": "REDIS_PASSWORD",
-          "value": "",
-          "description": "Redis password (optional)"
-        }
-      },
-      "volumes": {
-        "data": {
-          "path": "/data",
-          "description": "Redis data persistence"
-        }
-      },
-      "databases": [],
-      "features": {
-        "runner": false
-      }
-    },
-    {
-      "id": "traefik",
-      "name": "Traefik",
-      "version": "latest",
-      "description": "Modern reverse proxy and load balancer",
-      "category": "Networking",
-      "logo": "https://doc.traefik.io/traefik/assets/img/traefik.logo.png",
-      "versions": ["latest", "v2.10", "v2.9"],
-      "defaultPort": 80,
-      "image": "traefik",
-      "tools": [
-        { "name": "Traefik", "version": "2.x" }
-      ],
-      "env": {},
-      "volumes": {
-        "docker": {
-          "path": "/var/run/docker.sock",
-          "description": "Docker socket (required)"
-        },
-        "config": {
-          "path": "/etc/traefik",
-          "description": "Traefik configuration"
-        }
-      },
-      "databases": [],
-      "features": {
-        "runner": false
-      }
+      "needs_db": false,
+      "supports_external_db": true
     }
   ]
 }
