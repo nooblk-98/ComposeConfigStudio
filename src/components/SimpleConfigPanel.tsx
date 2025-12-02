@@ -508,46 +508,6 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
             </div>
 
             <div className="space-y-5">
-              {/* Group selectors (e.g., database options) */}
-              {app.multiDb && app.services && (() => {
-                const grouped = app.services.reduce<Record<string, { name: string; displayName?: string; selectorLabel?: string }[]>>((acc, svc) => {
-                  if (svc.group && svc.selectorLabel) {
-                    acc[svc.group] = acc[svc.group] || [];
-                    acc[svc.group].push({ name: svc.name, displayName: svc.displayName, selectorLabel: svc.selectorLabel });
-                  }
-                  return acc;
-                }, {});
-                const hasFlavorGroup = !!grouped['npm-flavor']?.length;
-
-                return Object.entries(grouped)
-                  .filter(([group]) => !(group === 'database' && hasFlavorGroup))
-                  .map(([group, services]) => (
-                    services.length > 1 && (
-                      <div key={group} className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
-                        <p className="text-sm font-semibold text-slate-900 mb-3 capitalize">Database settings</p>
-                        <div className="flex border border-slate-200 rounded-lg overflow-hidden w-full max-w-xl">
-                          {services.map((s, idx) => {
-                            const isActive = serviceConfigs[s.name]?.enabled;
-                            const isLast = idx === services.length - 1;
-                            return (
-                              <button
-                                key={s.name}
-                                onClick={() => setGroupSelection(group, s.name)}
-                                className={`flex-1 px-4 py-2 text-sm font-medium transition-colors border-r border-slate-200 last:border-r-0 ${isActive
-                                  ? 'bg-emerald-500 text-white'
-                                  : 'bg-white text-slate-700 hover:bg-slate-50'
-                                  } ${isLast ? 'last:border-r-0' : ''}`}
-                              >
-                                {s.selectorLabel || s.displayName || s.name}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )
-                  ));
-              })()}
-
               {app.services?.map((service) => {
                 const config = serviceConfigs[service.name];
                 if (!config) return null;

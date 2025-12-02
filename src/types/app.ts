@@ -49,6 +49,12 @@ export interface ServiceDefinition {
   optionalEnv?: OptionalEnvVar[]; // Optional environment variables specific to this service
 }
 
+export interface VariantDefinition {
+  id: string;
+  label: string;
+  config: AppDefinition;
+}
+
 export interface AppDefinition {
   id: string;
   name: string;
@@ -56,22 +62,24 @@ export interface AppDefinition {
   description: string;
   category: string;
   logo: string;
-  versions: string[];
+  versions?: string[];
   defaultPort: number;
-  image: string;
+  image?: string;
   tools: Tool[];
-  multiDb?: boolean; // Whether the app supports multiple database types with a selector
+  multiDb?: boolean; // Whether the app supports multiple database types with a selector (old system)
+  multiDbVariant?: boolean; // New system: Whether the app has multiple complete variants
 
   // New simplified service-based structure
   services?: ServiceDefinition[]; // All services (main app, database, addons)
   namedVolumes?: string[]; // Named volumes to create (e.g., ["db_data"])
+  variants?: VariantDefinition[]; // Multiple complete app variants (new system)
 
   // Legacy fields (keeping for backward compatibility)
-  env: Record<string, EnvVar>;
+  env?: Record<string, EnvVar>;
   optionalEnv?: OptionalEnvVar[];
-  volumes: Record<string, Volume>;
-  databases: string[];
-  features: {
+  volumes?: Record<string, Volume>;
+  databases?: string[];
+  features?: {
     runner?: boolean;
   };
   needs_db?: boolean;

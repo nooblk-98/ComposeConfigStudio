@@ -35,8 +35,15 @@ export const appsList = [
 // Export helper to get app config dynamically
 export async function getAppConfig(appId) {
   try {
-    const module = await import(`./${appId}/app.js`);
-    return module.default;
+    // Try to load main.js first (for multi-variant apps)
+    try {
+      const module = await import(`./${appId}/main.js`);
+      return module.default;
+    } catch {
+      // Fallback to app.js for simple apps
+      const module = await import(`./${appId}/app.js`);
+      return module.default;
+    }
   } catch (error) {
     console.error(`Failed to load app config for ${appId}:`, error);
     return null;
