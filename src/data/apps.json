@@ -71,8 +71,7 @@
           "images": [
             "wordpress:php8.2-apache",
             "wordpress:php8.3-apache",
-            "wordpress:php8.4-apache",
-            "wordpress:latest"
+            "wordpress:php8.4-apache"
           ],
           "defaultImage": "wordpress:php8.2-apache",
           "containerName": "wordpress_app",
@@ -147,6 +146,8 @@
         }
       ]
     },
+
+    
     {
       "id": "grafana",
       "name": "Grafana",
