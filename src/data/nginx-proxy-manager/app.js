@@ -1,3 +1,5 @@
+import { databases } from './db.js';
+
 export default {
   id: "nginx-proxy-manager",
   name: "Nginx Proxy Manager",
@@ -11,7 +13,9 @@ export default {
   multiDb: true,
 
   services: [
-    // SQLite flavor
+    // ============================================
+    // VARIANT 1: SQLite
+    // ============================================
     {
       name: "nginx_proxy_manager-sqlite",
       displayName: "Nginx Proxy Manager",
@@ -37,7 +41,9 @@ export default {
       ]
     },
 
-    // MariaDB flavor (external DB connection)
+    // ============================================
+    // VARIANT 2: MariaDB
+    // ============================================
     {
       name: "npm-mariadb",
       displayName: "Nginx Proxy Manager",
@@ -54,8 +60,7 @@ export default {
       ports: ["80:80", "81:81", "443:443"],
       environment: {
         TZ: "UTC",
-        DB_MYSQL_HOST: "db",
-        DB_MYSQL_PORT: "3306",
+        DB_MYSQL_HOST: "mariadb",
         DB_MYSQL_USER: "npm",
         DB_MYSQL_PASSWORD: "npm",
         DB_MYSQL_NAME: "npm"
@@ -64,34 +69,12 @@ export default {
         "./data:/data",
         "./letsencrypt:/etc/letsencrypt"
       ],
-      dependsOn: ["npm-db-mariadb"]
+      dependsOn: ["mariadb"]  // Links to database below
     },
 
-    // MariaDB Database Container
-    {
-      name: "npm-db-mariadb",
-      group: "npm-flavor",
-      mandatory: false,
-      images: [
-        "mariadb:latest",
-        "mariadb:11",
-        "mariadb:10"
-      ],
-      defaultImage: "mariadb:latest",
-      containerName: "db",
-      restart: "always",
-      environment: {
-        MYSQL_ROOT_PASSWORD: "npm",
-        MYSQL_DATABASE: "npm",
-        MYSQL_USER: "npm",
-        MYSQL_PASSWORD: "npm"
-      },
-      volumes: [
-        "./mysql:/var/lib/mysql"
-      ]
-    },
-
-    // Postgres flavor (external DB connection)
+    // ============================================
+    // VARIANT 3: Postgres
+    // ============================================
     {
       name: "npm-postgres",
       displayName: "Nginx Proxy Manager",
@@ -109,7 +92,6 @@ export default {
       environment: {
         TZ: "UTC",
         DB_POSTGRES_HOST: "db",
-        DB_POSTGRES_PORT: "5432",
         DB_POSTGRES_USER: "npm",
         DB_POSTGRES_PASSWORD: "npmpass",
         DB_POSTGRES_NAME: "npm"
@@ -118,30 +100,27 @@ export default {
         "./data:/data",
         "./letsencrypt:/etc/letsencrypt"
       ],
-      dependsOn: ["npm-db-postgres"]
+      dependsOn: ["postgres"]  // Links to database below
     },
 
-    // Postgres Database Container
+    // ============================================
+    // Database Containers (from db.js)
+    // ============================================
+
+    // MariaDB Container
     {
-      name: "npm-db-postgres",
+      name: "mariadb",
       group: "npm-flavor",
       mandatory: false,
-      images: [
-        "postgres:latest",
-        "postgres:16",
-        "postgres:15"
-      ],
-      defaultImage: "postgres:latest",
-      containerName: "db",
-      restart: "always",
-      environment: {
-        POSTGRES_DB: "npm",
-        POSTGRES_USER: "npm",
-        POSTGRES_PASSWORD: "npmpass"
-      },
-      volumes: [
-        "./postgres:/var/lib/postgresql/data"
-      ]
+      ...databases.mariadb.container
+    },
+
+    // Postgres Container
+    {
+      name: "postgres",
+      group: "npm-flavor",
+      mandatory: false,
+      ...databases.postgres.container
     }
   ],
 
