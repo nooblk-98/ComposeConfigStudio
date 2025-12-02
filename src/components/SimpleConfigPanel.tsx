@@ -538,7 +538,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                             </div>
                           )}
 
-                          {app.optionalEnv && app.optionalEnv.length > 0 && (
+                          {app.optionalEnv && app.optionalEnv.length > 0 && service.name === app.id && (
                             <div className="rounded-xl border border-slate-200 bg-white p-4">
                               <div className="mb-3">
                                 <span className="text-base font-semibold text-slate-900">Optional environment variables</span>
