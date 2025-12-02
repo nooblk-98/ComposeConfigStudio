@@ -35,5 +35,6 @@ export default {
     }
   ],
   
+  networks: ["grafana"],
   namedVolumes: ["grafana_data"]
 };

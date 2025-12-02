@@ -29,8 +29,8 @@ export default {
       ports: ["8080:80"],
       environment: {
         WORDPRESS_DB_HOST: "database",
-        WORDPRESS_DB_USER: "wordpress",
-        WORDPRESS_DB_PASSWORD: "wordpress",
+        WORDPRESS_DB_USER: "wpuser",
+        WORDPRESS_DB_PASSWORD: "wppass",
         WORDPRESS_DB_NAME: "wordpress"
       },
       optionalEnv: [
@@ -43,6 +43,7 @@ export default {
     {
       name: "database",
       mandatory: false,
+      defaultEnabled: true,
       images: [
         "mariadb:10.6",
         "mariadb:11",
@@ -55,10 +56,10 @@ export default {
       restart: "always",
       ports: [],
       environment: {
-        MYSQL_ROOT_PASSWORD: "root",
-        MYSQL_DATABASE: "wordpress",
-        MYSQL_USER: "wordpress",
-        MYSQL_PASSWORD: "wordpress"
+        MYSQL_ROOT_PASSWORD: "rootpass",
+        MYSQL_DATABASE: "${wordpress.WORDPRESS_DB_NAME}",
+        MYSQL_USER: "${wordpress.WORDPRESS_DB_USER}",
+        MYSQL_PASSWORD: "${wordpress.WORDPRESS_DB_PASSWORD}"
       },
       volumes: ["./db_data:/var/lib/mysql"]
     },
@@ -76,7 +77,7 @@ export default {
       environment: {
         PMA_HOST: "database",
         PMA_USER: "root",
-        PMA_PASSWORD: "root"
+        PMA_PASSWORD: "${database.MYSQL_ROOT_PASSWORD}"
       },
       optionalEnv: [
         { key: "UPLOAD_LIMIT", defaultValue: "", description: "Upload limit (e.g., 64M)", category: "phpMyAdmin" },
@@ -88,5 +89,6 @@ export default {
     }
   ],
   
+  networks: ["wordpress"],
   namedVolumes: ["db_data"]
 };

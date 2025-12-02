@@ -15,25 +15,21 @@ export default {
       mandatory: true,
       images: [
         "jc21/nginx-proxy-manager:latest",
-        "jc21/nginx-proxy-manager:2.10.4",
-        "jc21/nginx-proxy-manager:2.9.22"
       ],
       defaultImage: "jc21/nginx-proxy-manager:latest",
-      containerName: "nginx_proxy_manager",
+      containerName: "nginx",
       restart: "always",
       ports: ["80:80", "81:81", "443:443"],
       environment: {
         TZ: "UTC",
         DB_POSTGRES_HOST: "postgres",
-        DB_POSTGRES_PORT: "5432",
-        DB_POSTGRES_USER: "npm",
-        DB_POSTGRES_PASSWORD: "npmpass",
-        DB_POSTGRES_NAME: "npm"
+        DB_POSTGRES_USER: "dbuser",
+        DB_POSTGRES_PASSWORD: "dbpass@123+",
+        DB_POSTGRES_NAME: "database"
       },
-    //   optionalEnv: [
-    //     { key: "DISABLE_IPV6", defaultValue: "true", description: "Disable IPv6 support", category: "Network" },
-    //     { key: "X_FRAME_OPTIONS", defaultValue: "sameorigin", description: "X-Frame-Options header", category: "Security" }
-    //   ],
+optionalEnv: [
+        { key: "DB_POSTGRES_PORT", defaultValue: "", description: "Change Only When Use Without default Port", category: "Network" },
+      ],
       volumes: [
         "./data:/data",
         "./letsencrypt:/etc/letsencrypt"

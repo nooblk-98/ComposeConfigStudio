@@ -15,11 +15,9 @@ export default {
       mandatory: true,
       images: [
         "jc21/nginx-proxy-manager:latest",
-        "jc21/nginx-proxy-manager:2.10.4",
-        "jc21/nginx-proxy-manager:2.9.22"
       ],
       defaultImage: "jc21/nginx-proxy-manager:latest",
-      containerName: "nginx_proxy_manager",
+      containerName: "nginx",
       restart: "always",
       ports: ["80:80", "81:81", "443:443"],
       environment: {

@@ -29,5 +29,6 @@ export default {
     }
   ],
   
+  networks: ["uptime-kuma"],
   namedVolumes: ["uptime_kuma_data"]
 };
