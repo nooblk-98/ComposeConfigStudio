@@ -30,10 +30,10 @@ export default {
         DB_POSTGRES_PASSWORD: "npmpass",
         DB_POSTGRES_NAME: "npm"
       },
-      optionalEnv: [
-        { key: "DISABLE_IPV6", defaultValue: "true", description: "Disable IPv6 support", category: "Network" },
-        { key: "X_FRAME_OPTIONS", defaultValue: "sameorigin", description: "X-Frame-Options header", category: "Security" }
-      ],
+    //   optionalEnv: [
+    //     { key: "DISABLE_IPV6", defaultValue: "true", description: "Disable IPv6 support", category: "Network" },
+    //     { key: "X_FRAME_OPTIONS", defaultValue: "sameorigin", description: "X-Frame-Options header", category: "Security" }
+    //   ],
       volumes: [
         "./data:/data",
         "./letsencrypt:/etc/letsencrypt"
