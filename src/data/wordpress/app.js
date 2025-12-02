@@ -12,11 +12,6 @@ export default {
     { name: "Apache", version: "2.4" }
   ],
 
-  optionalEnv: [
-    { key: "WORDPRESS_TABLE_PREFIX", defaultValue: "wp_", description: "Database table prefix", category: "Database" },
-    { key: "WORDPRESS_DEBUG", defaultValue: "0", description: "Enable debug mode (1/0)", category: "Development" }
-  ],
-
   services: [
     {
       name: "wordpress",
@@ -38,6 +33,10 @@ export default {
         WORDPRESS_DB_PASSWORD: "wordpress",
         WORDPRESS_DB_NAME: "wordpress"
       },
+      optionalEnv: [
+        { key: "WORDPRESS_TABLE_PREFIX", defaultValue: "wp_", description: "Database table prefix", category: "Database" },
+        { key: "WORDPRESS_DEBUG", defaultValue: "0", description: "Enable debug mode (1/0)", category: "Development" }
+      ],
       volumes: ["./wordpress:/var/www/html"],
       dependsOn: ["database"]
     },
@@ -79,6 +78,12 @@ export default {
         PMA_USER: "root",
         PMA_PASSWORD: "root"
       },
+      optionalEnv: [
+        { key: "UPLOAD_LIMIT", defaultValue: "", description: "Upload limit (e.g., 64M)", category: "phpMyAdmin" },
+        { key: "MEMORY_LIMIT", defaultValue: "", description: "Memory limit (e.g., 256M)", category: "phpMyAdmin" },
+        { key: "MAX_EXECUTION_TIME", defaultValue: "", description: "Max execution time (seconds)", category: "phpMyAdmin" },
+        { key: "TZ", defaultValue: "", description: "Timezone (e.g., UTC)", category: "phpMyAdmin" }
+      ],
       dependsOn: ["database"]
     }
   ],

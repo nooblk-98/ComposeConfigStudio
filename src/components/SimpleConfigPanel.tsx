@@ -27,10 +27,25 @@ const DOCKER_ICON = 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/d
 
 export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProps) {
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
-  const [optionalEnvValues, setOptionalEnvValues] = useState<Record<string, string>>(() => {
-    const initial: Record<string, string> = {};
-    app.optionalEnv?.forEach(opt => {
-      initial[opt.key] = opt.defaultValue || '';
+  const [optionalEnvValues, setOptionalEnvValues] = useState<Record<string, Record<string, string>>>(() => {
+    const initial: Record<string, Record<string, string>> = {};
+    // App-level optional env (for main service)
+    if (app.optionalEnv && app.optionalEnv.length > 0) {
+      initial[app.id] = {};
+      app.optionalEnv.forEach(opt => {
+        initial[app.id][opt.key] = opt.defaultValue || '';
+      });
+    }
+    // Service-level optional env
+    app.services?.forEach(service => {
+      if (service.optionalEnv && service.optionalEnv.length > 0) {
+        initial[service.name] = initial[service.name] || {};
+        service.optionalEnv.forEach(opt => {
+          if (initial[service.name][opt.key] === undefined) {
+            initial[service.name][opt.key] = opt.defaultValue || '';
+          }
+        });
+      }
     });
     return initial;
   });
@@ -197,10 +212,11 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
           cmd += ` -e ${key}=${value}`;
         }
       });
-      const primaryService = enabledServices[0];
-      if (service.name === app.id || service.name === primaryService?.name) {
-        app.optionalEnv?.forEach(opt => {
-          const val = optionalEnvValues[opt.key]?.trim();
+      const serviceOptional = service.optionalEnv || (service.name === app.id ? app.optionalEnv : undefined);
+      if (serviceOptional && serviceOptional.length > 0) {
+        const vals = optionalEnvValues[service.name] || optionalEnvValues[app.id] || {};
+        serviceOptional.forEach(opt => {
+          const val = vals[opt.key]?.trim();
           if (val) {
             cmd += ` -e ${opt.key}=${val}`;
           }
@@ -245,10 +261,11 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
         envKeys.forEach(key => {
           yaml += `      ${key}: ${config.environment[key]}\n`;
         });
-        const primaryService = enabledServices[0];
-        if (service.name === app.id || service.name === primaryService?.name) {
-          app.optionalEnv?.forEach(opt => {
-            const val = optionalEnvValues[opt.key]?.trim();
+        const serviceOptional = service.optionalEnv || (service.name === app.id ? app.optionalEnv : undefined);
+        if (serviceOptional && serviceOptional.length > 0) {
+          const vals = optionalEnvValues[service.name] || optionalEnvValues[app.id] || {};
+          serviceOptional.forEach(opt => {
+            const val = vals[opt.key]?.trim();
             if (val) {
               yaml += `      ${opt.key}: ${val}\n`;
             }
@@ -538,28 +555,40 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                             </div>
                           )}
 
-                          {app.optionalEnv && app.optionalEnv.length > 0 && service.name === app.id && (
+                          {(() => {
+                            const serviceOptional = service.optionalEnv || (service.name === app.id ? app.optionalEnv : undefined);
+                            return serviceOptional && serviceOptional.length > 0;
+                          })() && (
                             <div className="rounded-xl border border-slate-200 bg-white p-4">
                               <div className="mb-3">
                                 <span className="text-base font-semibold text-slate-900">Optional environment variables</span>
                                 <p className="text-sm text-slate-500">Only included when a value is provided.</p>
                               </div>
                               <div className="space-y-4">
-                                {app.optionalEnv.map(opt => (
-                                  <div key={opt.key} className="space-y-1">
-                                    <div className="flex items-center justify-between gap-3">
-                                      <span className="text-xs font-mono tracking-wide text-slate-800">{opt.key}</span>
-                                      {opt.description && <span className="text-xs text-slate-500 text-right">{opt.description}</span>}
+                                {(service.optionalEnv || (service.name === app.id ? app.optionalEnv : []) || []).map(opt => {
+                                  const val = (optionalEnvValues[service.name] || optionalEnvValues[app.id] || {})[opt.key] ?? '';
+                                  return (
+                                    <div key={opt.key} className="space-y-1">
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="text-xs font-mono tracking-wide text-slate-800">{opt.key}</span>
+                                        {opt.description && <span className="text-xs text-slate-500 text-right">{opt.description}</span>}
+                                      </div>
+                                      <input
+                                        type={opt.key.toLowerCase().includes('password') ? 'password' : 'text'}
+                                        value={val}
+                                        onChange={(e) => setOptionalEnvValues(prev => ({
+                                          ...prev,
+                                          [service.name]: {
+                                            ...(prev[service.name] || prev[app.id] || {}),
+                                            [opt.key]: e.target.value
+                                          }
+                                        }))}
+                                        className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                        placeholder={opt.defaultValue || 'Enter value'}
+                                      />
                                     </div>
-                                    <input
-                                      type={opt.key.toLowerCase().includes('password') ? 'password' : 'text'}
-                                      value={optionalEnvValues[opt.key] ?? ''}
-                                      onChange={(e) => setOptionalEnvValues(prev => ({ ...prev, [opt.key]: e.target.value }))}
-                                      className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                      placeholder={opt.defaultValue || 'Enter value'}
-                                    />
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             </div>
                           )}

@@ -43,6 +43,7 @@ export interface ServiceDefinition {
   environment?: Record<string, string>; // Environment variables
   volumes?: string[]; // Volume mappings (e.g., ["./wordpress:/var/www/html"])
   dependsOn?: string[]; // Service dependencies
+  optionalEnv?: OptionalEnv[]; // Optional environment variables specific to this service
 }
 
 export interface AppDefinition {
