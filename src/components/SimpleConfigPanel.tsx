@@ -10,6 +10,7 @@ interface SimpleConfigPanelProps {
 interface ServiceConfig {
   enabled: boolean;
   selectedImage: string;
+  containerName: string;
   environment: Record<string, string>;
   ports: string[];
   volumes: string[];
@@ -24,6 +25,7 @@ export default function SimpleConfigPanel({ app }: SimpleConfigPanelProps) {
       configs[service.name] = {
         enabled: service.mandatory,
         selectedImage: service.defaultImage,
+        containerName: service.containerName,
         environment: { ...service.environment },
         ports: [...(service.ports || [])],
         volumes: [...(service.volumes || [])]
@@ -50,6 +52,53 @@ export default function SimpleConfigPanel({ app }: SimpleConfigPanelProps) {
     }));
   };
 
+  const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<'command' | 'compose'>('command');
+  const [showNetworkTab, setShowNetworkTab] = useState(false);
+  
+  // Network configuration
+  const [networkConfig, setNetworkConfig] = useState({
+    enabled: true,
+    name: 'app_network',
+    driver: 'bridge',
+    ipam: {
+      driver: 'default',
+      subnet: '',
+      gateway: ''
+    },
+    internal: false,
+    attachable: true
+  });
+
+  const generateDockerCommand = () => {
+    const enabledServices = app.services?.filter(s => serviceConfigs[s.name]?.enabled);
+    if (!enabledServices || enabledServices.length === 0) return '';
+
+    const firstService = enabledServices[0];
+    const config = serviceConfigs[firstService.name];
+    
+    let cmd = `docker run --name ${config.containerName} \\`;
+    
+    // Add ports
+    config.ports.forEach(port => {
+      cmd += `\n-p ${port} \\`;
+    });
+    
+    // Add environment variables
+    Object.entries(config.environment).forEach(([key, value]) => {
+      cmd += `\n-e ${key}=${value} \\`;
+    });
+    
+    // Add volumes
+    config.volumes.forEach(vol => {
+      cmd += `\n-d ${vol} \\`;
+    });
+    
+    cmd += `\n${config.selectedImage}`;
+    
+    return cmd;
+  };
+
   const generateDockerCompose = () => {
     const enabledServices = app.services?.filter(s => serviceConfigs[s.name]?.enabled);
     if (!enabledServices) return '';
@@ -60,7 +109,7 @@ export default function SimpleConfigPanel({ app }: SimpleConfigPanelProps) {
       const config = serviceConfigs[service.name];
       yaml += `  ${service.name}:\n`;
       yaml += `    image: ${config.selectedImage}\n`;
-      yaml += `    container_name: ${service.containerName}\n`;
+      yaml += `    container_name: ${config.containerName}\n`;
       if (service.restart) yaml += `    restart: ${service.restart}\n`;
       
       if (config.ports.length > 0) {
@@ -91,6 +140,12 @@ export default function SimpleConfigPanel({ app }: SimpleConfigPanelProps) {
         }
       }
       
+      // Add network configuration
+      if (networkConfig.enabled) {
+        yaml += `    networks:\n`;
+        yaml += `      - ${networkConfig.name}\n`;
+      }
+      
       yaml += '\n';
     });
 
@@ -99,16 +154,31 @@ export default function SimpleConfigPanel({ app }: SimpleConfigPanelProps) {
       app.namedVolumes.forEach(vol => yaml += `  ${vol}:\n`);
     }
 
+    // Add network definition
+    if (networkConfig.enabled) {
+      yaml += '\nnetworks:\n';
+      yaml += `  ${networkConfig.name}:\n`;
+      yaml += `    driver: ${networkConfig.driver}\n`;
+      
+      if (networkConfig.ipam.subnet || networkConfig.ipam.gateway) {
+        yaml += `    ipam:\n`;
+        yaml += `      driver: ${networkConfig.ipam.driver}\n`;
+        yaml += `      config:\n`;
+        yaml += `        - subnet: ${networkConfig.ipam.subnet || '172.20.0.0/16'}\n`;
+        if (networkConfig.ipam.gateway) {
+          yaml += `          gateway: ${networkConfig.ipam.gateway}\n`;
+        }
+      }
+      
+      if (networkConfig.internal) {
+        yaml += `    internal: true\n`;
+      }
+      if (networkConfig.attachable) {
+        yaml += `    attachable: true\n`;
+      }
+    }
+
     return yaml;
-  };
-
-  const [copied, setCopied] = useState(false);
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(generateDockerCompose()).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
   };
 
   return (
@@ -164,6 +234,20 @@ export default function SimpleConfigPanel({ app }: SimpleConfigPanelProps) {
 
                 {config.enabled && (
                   <div className="space-y-4">
+                    {/* Container Name */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Container Name
+                      </label>
+                      <input
+                        type="text"
+                        value={config.containerName}
+                        onChange={(e) => updateServiceConfig(service.name, { containerName: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 font-mono"
+                        placeholder={service.containerName}
+                      />
+                    </div>
+
                     {/* Image Selection */}
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -294,23 +378,170 @@ export default function SimpleConfigPanel({ app }: SimpleConfigPanelProps) {
               </div>
             );
           })}
+
+          {/* Network Configuration */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-gray-900">Network</h2>
+                <button
+                  onClick={() => setShowNetworkTab(!showNetworkTab)}
+                  className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                >
+                  {showNetworkTab ? '▼ Hide' : '▶ Show'} Settings
+                </button>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={networkConfig.enabled}
+                  onChange={(e) => setNetworkConfig(prev => ({ ...prev, enabled: e.target.checked }))}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              </label>
+            </div>
+
+            {showNetworkTab && networkConfig.enabled && (
+              <div className="space-y-4">
+                {/* Network Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Network Name
+                  </label>
+                  <input
+                    type="text"
+                    value={networkConfig.name}
+                    onChange={(e) => setNetworkConfig(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 font-mono"
+                    placeholder="app_network"
+                  />
+                </div>
+
+                {/* Network Driver */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Driver
+                  </label>
+                  <select
+                    value={networkConfig.driver}
+                    onChange={(e) => setNetworkConfig(prev => ({ ...prev, driver: e.target.value }))}
+                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
+                  >
+                    <option value="bridge">bridge</option>
+                    <option value="host">host</option>
+                    <option value="overlay">overlay</option>
+                    <option value="macvlan">macvlan</option>
+                    <option value="none">none</option>
+                  </select>
+                </div>
+
+                {/* IPAM Configuration */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Subnet
+                    </label>
+                    <input
+                      type="text"
+                      value={networkConfig.ipam.subnet}
+                      onChange={(e) => setNetworkConfig(prev => ({ 
+                        ...prev, 
+                        ipam: { ...prev.ipam, subnet: e.target.value }
+                      }))}
+                      className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 font-mono"
+                      placeholder="172.20.0.0/16"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Gateway
+                    </label>
+                    <input
+                      type="text"
+                      value={networkConfig.ipam.gateway}
+                      onChange={(e) => setNetworkConfig(prev => ({ 
+                        ...prev, 
+                        ipam: { ...prev.ipam, gateway: e.target.value }
+                      }))}
+                      className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 font-mono"
+                      placeholder="172.20.0.1"
+                    />
+                  </div>
+                </div>
+
+                {/* Network Options */}
+                <div className="flex gap-6">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={networkConfig.internal}
+                      onChange={(e) => setNetworkConfig(prev => ({ ...prev, internal: e.target.checked }))}
+                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                    />
+                    <span className="text-sm text-gray-700">Internal (isolated from external access)</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={networkConfig.attachable}
+                      onChange={(e) => setNetworkConfig(prev => ({ ...prev, attachable: e.target.checked }))}
+                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                    />
+                    <span className="text-sm text-gray-700">Attachable (standalone containers can attach)</span>
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Right Panel - Output */}
       <div className="w-1/2 bg-gray-900 flex flex-col">
-        <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-          <h3 className="text-white font-semibold">docker-compose.yml</h3>
+        {/* Tabs */}
+        <div className="flex border-b border-gray-700">
           <button
-            onClick={copyToClipboard}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-medium"
+            onClick={() => setActiveTab('command')}
+            className={`px-6 py-3 font-medium transition-colors ${
+              activeTab === 'command'
+                ? 'bg-black text-white border-b-2 border-white'
+                : 'text-gray-400 hover:text-gray-200 bg-gray-800'
+            }`}
           >
-            {copied ? '✓ Copied!' : 'Copy'}
+            Docker command
+          </button>
+          <button
+            onClick={() => setActiveTab('compose')}
+            className={`px-6 py-3 font-medium transition-colors ${
+              activeTab === 'compose'
+                ? 'bg-black text-white border-b-2 border-white'
+                : 'text-gray-400 hover:text-gray-200 bg-gray-800'
+            }`}
+          >
+            Docker Compose
           </button>
         </div>
-        <div className="flex-1 overflow-auto p-4">
-          <pre className="text-gray-300 text-sm font-mono leading-relaxed">
-            {generateDockerCompose()}
+
+        {/* Terminal Output */}
+        <div className="flex-1 overflow-auto bg-black p-6 relative">
+          <button
+            onClick={() => {
+              const text = activeTab === 'command' ? generateDockerCommand() : generateDockerCompose();
+              navigator.clipboard.writeText(text).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              });
+            }}
+            className="absolute top-4 right-4 p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors border border-gray-600"
+            title="Copy to clipboard"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </button>
+          <pre className="text-green-400 text-sm font-mono leading-relaxed pr-12 whitespace-pre-wrap">
+            {activeTab === 'command' ? generateDockerCommand() : generateDockerCompose()}
           </pre>
         </div>
       </div>

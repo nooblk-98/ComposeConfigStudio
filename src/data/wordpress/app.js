@@ -16,7 +16,7 @@ export default {
         "wordpress:latest"
       ],
       defaultImage: "wordpress:php8.2-apache",
-      containerName: "wordpress_app",
+      containerName: "wordpress",
       restart: "always",
       ports: ["8080:80"],
       environment: {
