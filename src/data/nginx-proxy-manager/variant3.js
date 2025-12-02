@@ -54,9 +54,9 @@ export default {
       restart: "always",
       ports: [],
       environment: {
-        POSTGRES_DB: "npm",
-        POSTGRES_USER: "npm",
-        POSTGRES_PASSWORD: "npmpass"
+        POSTGRES_DB: "${nginx_proxy_manager.DB_POSTGRES_NAME}",
+        POSTGRES_USER: "${nginx_proxy_manager.DB_POSTGRES_USER}",
+        POSTGRES_PASSWORD: "${nginx_proxy_manager.DB_POSTGRES_PASSWORD}"
       },
       volumes: ["./postgres:/var/lib/postgresql/data"]
     }

@@ -53,10 +53,10 @@ export default {
       restart: "always",
       ports: [],
       environment: {
-        MYSQL_ROOT_PASSWORD: "npm",
-        MYSQL_DATABASE: "npm",
-        MYSQL_USER: "npm",
-        MYSQL_PASSWORD: "npm"
+        MYSQL_ROOT_PASSWORD: "${nginx_proxy_manager.DB_MYSQL_PASSWORD}",
+        MYSQL_DATABASE: "${nginx_proxy_manager.DB_MYSQL_NAME}",
+        MYSQL_USER: "${nginx_proxy_manager.DB_MYSQL_USER}",
+        MYSQL_PASSWORD: "${nginx_proxy_manager.DB_MYSQL_PASSWORD}"
       },
       volumes: ["./mysql:/var/lib/mysql"]
     }

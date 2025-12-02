@@ -59,6 +59,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
     const configs: Record<string, ServiceConfig> = {};
     const firstInGroup: Record<string, boolean> = {};
 
+    // First pass: create all configs
     app.services?.forEach(service => {
       const inGroup = service.group;
       const shouldEnable = inGroup
@@ -91,8 +92,48 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
       };
     });
 
+    // Second pass: resolve variable references
+    app.services?.forEach(service => {
+      if (service.environment) {
+        Object.entries(service.environment).forEach(([key, value]) => {
+          if (typeof value === 'string' && value.match(/^\$\{(\w+)\.(\w+)\}$/)) {
+            const match = value.match(/^\$\{(\w+)\.(\w+)\}$/);
+            if (match) {
+              const [, refServiceName, refVarName] = match;
+              if (configs[refServiceName]?.environment?.[refVarName]) {
+                configs[service.name].environment[key] = configs[refServiceName].environment[refVarName];
+              }
+            }
+          }
+        });
+      }
+    });
+
     return configs;
   });
+
+  // Helper function to resolve variable references like ${serviceName.VAR_NAME}
+  const resolveVariableReference = (value: string, allConfigs: Record<string, ServiceConfig>): string => {
+    if (typeof value !== 'string') return value;
+    
+    const match = value.match(/^\$\{(\w+)\.(\w+)\}$/);
+    if (match) {
+      const [, refServiceName, refVarName] = match;
+      if (allConfigs[refServiceName]?.environment?.[refVarName]) {
+        return allConfigs[refServiceName].environment[refVarName];
+      }
+    }
+    return value;
+  };
+
+  // Helper function to check if an environment variable is linked from another service
+  const isLinkedVariable = (serviceName: string, key: string): boolean => {
+    const service = app.services?.find(s => s.name === serviceName);
+    if (!service?.environment) return false;
+    
+    const originalValue = service.environment[key];
+    return typeof originalValue === 'string' && /^\$\{(\w+)\.(\w+)\}$/.test(originalValue);
+  };
 
   const updateServiceConfig = (serviceName: string, updates: Partial<ServiceConfig>) => {
     setServiceConfigs(prev => ({
@@ -158,13 +199,37 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
   }, []);
 
   const updateEnv = (serviceName: string, key: string, value: string) => {
-    setServiceConfigs(prev => ({
-      ...prev,
-      [serviceName]: {
-        ...prev[serviceName],
-        environment: { ...prev[serviceName].environment, [key]: value }
-      }
-    }));
+    setServiceConfigs(prev => {
+      const updated = {
+        ...prev,
+        [serviceName]: {
+          ...prev[serviceName],
+          environment: { ...prev[serviceName].environment, [key]: value }
+        }
+      };
+
+      // Check if any other services reference this variable and update them
+      app.services?.forEach(service => {
+        if (service.name !== serviceName && service.environment) {
+          const needsUpdate: Record<string, string> = {};
+          
+          Object.entries(service.environment).forEach(([envKey, envValue]) => {
+            if (typeof envValue === 'string' && envValue.includes(`\${${serviceName}.${key}}`)) {
+              needsUpdate[envKey] = value;
+            }
+          });
+
+          if (Object.keys(needsUpdate).length > 0) {
+            updated[service.name] = {
+              ...updated[service.name],
+              environment: { ...updated[service.name].environment, ...needsUpdate }
+            };
+          }
+        }
+      });
+
+      return updated;
+    });
   };
 
   const renameEnvKey = (serviceName: string, oldKey: string, newKey: string) => {
@@ -614,11 +679,23 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                 </button>
                               </div>
                               <div className="space-y-4">
-                                {Object.entries(config.environment).map(([key, value]) => (
+                                {Object.entries(config.environment).map(([key, value]) => {
+                                  const isLinked = isLinkedVariable(service.name, key);
+                                  return (
                                   <div key={key} className="space-y-1">
                                     <div className="flex items-center justify-between gap-3">
-                                      <span className="text-xs font-mono tracking-wide text-slate-800">{key}</span>
-                                      {defaultsRef.current[service.name]?.envKeys.has(key) ? null : (
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs font-mono tracking-wide text-slate-800">{key}</span>
+                                        {isLinked && (
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 border border-blue-200">
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                            </svg>
+                                            Linked
+                                          </span>
+                                        )}
+                                      </div>
+                                      {!isLinked && !defaultsRef.current[service.name]?.envKeys.has(key) && (
                                         <button
                                           type="button"
                                           onClick={() => removeEnv(service.name, key)}
@@ -635,7 +712,14 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                         type={key.toLowerCase().includes('password') && !showPasswords[`${service.name}_${key}`] ? 'password' : 'text'}
                                         value={value}
                                         onChange={(e) => updateEnv(service.name, key, e.target.value)}
-                                        className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                        readOnly={isLinked}
+                                        disabled={isLinked}
+                                        className={`w-full h-11 rounded-lg border px-3 pr-10 text-sm placeholder:text-slate-400 focus:outline-none ${
+                                          isLinked 
+                                            ? 'border-blue-200 bg-blue-50/50 text-blue-900 cursor-not-allowed' 
+                                            : 'border-slate-200 bg-white text-slate-900 focus:border-purple-400 focus:ring-2 focus:ring-purple-500/40'
+                                        }`}
+                                        title={isLinked ? 'This value is automatically synced from another service' : ''}
                                       />
                                       {key.toLowerCase().includes('password') && (
                                         <button
@@ -664,7 +748,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                       )}
                                     </div>
                                   </div>
-                                ))}
+                                )})}
                               </div>
                             </div>
                           )}
