@@ -52,6 +52,18 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
     });
     return initial;
   });
+  
+  // Track which services are expanded (default: all collapsed)
+  const [expandedServices, setExpandedServices] = useState<Record<string, boolean>>({});
+  const [networkExpanded, setNetworkExpanded] = useState(false);
+  
+  const toggleServiceExpanded = (serviceName: string) => {
+    setExpandedServices(prev => ({
+      ...prev,
+      [serviceName]: !prev[serviceName]
+    }));
+  };
+  
   const getServiceIcon = () => DOCKER_ICON;
 
   // Track default values to prevent removing predefined entries
@@ -619,38 +631,47 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                 return (
                   <div key={service.name} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
-                      <div>
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 flex items-center justify-center overflow-hidden">
-                            {iconUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={iconUrl}
-                                alt={`${service.displayName || service.name} logo`}
-                                className="h-8 w-8 object-contain"
-                              />
-                            ) : (
-                              <span className="text-sm font-semibold text-slate-800">
-                                {(service.displayName || service.name).charAt(0).toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                          <div>
-                            <h2 className="text-lg font-semibold text-slate-900 capitalize">{service.displayName || service.name}</h2>
-                          </div>
-                          {service.mandatory && (
-                            <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700 border border-blue-200">
-                              Required
-                            </span>
-                          )}
-                          {service.group && service.group !== 'npm-flavor' && (
-                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 border border-slate-200">
-                              {service.group}
+                      <div className="flex items-center gap-3 flex-1">
+                        {config.enabled && (
+                          <button
+                            onClick={() => toggleServiceExpanded(service.name)}
+                            className="p-1 rounded-md hover:bg-slate-100 transition-colors"
+                            aria-label={expandedServices[service.name] ? 'Collapse' : 'Expand'}
+                          >
+                            <svg className="w-5 h-5 text-slate-600 transition-transform" style={{ transform: expandedServices[service.name] ? 'rotate(180deg)' : 'rotate(0deg)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                        )}
+                        <div className="h-10 w-10 flex items-center justify-center overflow-hidden">
+                          {iconUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={iconUrl}
+                              alt={`${service.displayName || service.name} logo`}
+                              className="h-8 w-8 object-contain"
+                            />
+                          ) : (
+                            <span className="text-sm font-semibold text-slate-800">
+                              {(service.displayName || service.name).charAt(0).toUpperCase()}
                             </span>
                           )}
                         </div>
-                        {service.description && (
-                          <p className="mt-2 text-sm text-slate-600">{service.description}</p>
+                        <div>
+                          <h2 className="text-lg font-semibold text-slate-900 capitalize">{service.displayName || service.name}</h2>
+                          {service.description && !expandedServices[service.name] && (
+                            <p className="text-sm text-slate-600">{service.description}</p>
+                          )}
+                        </div>
+                        {service.mandatory && (
+                          <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700 border border-blue-200">
+                            Required
+                          </span>
+                        )}
+                        {service.group && service.group !== 'npm-flavor' && (
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 border border-slate-200">
+                            {service.group}
+                          </span>
                         )}
                       </div>
 
@@ -667,7 +688,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                       )}
                     </div>
 
-                    {config.enabled && (
+                    {config.enabled && expandedServices[service.name] && (
                       <div className="space-y-6 px-5 py-5 bg-slate-50">
                         {hasImage && (
                           <div className="grid gap-3 sm:grid-cols-2">
@@ -1130,9 +1151,24 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
 
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Network</h3>
-                  <p className="text-base text-slate-600">Control how services communicate with each other.</p>
+                <div className="flex items-center gap-3 flex-1">
+                  {networkConfig.enabled && (
+                    <button
+                      onClick={() => setNetworkExpanded(!networkExpanded)}
+                      className="p-1 rounded-md hover:bg-slate-100 transition-colors"
+                      aria-label={networkExpanded ? 'Collapse' : 'Expand'}
+                    >
+                      <svg className="w-5 h-5 text-slate-600 transition-transform" style={{ transform: networkExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  )}
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">Network</h3>
+                    {!networkExpanded && networkConfig.enabled && (
+                      <p className="text-base text-slate-600">Control how services communicate with each other.</p>
+                    )}
+                  </div>
                 </div>
                 <label className="relative inline-flex cursor-pointer items-center">
                   <input
@@ -1145,7 +1181,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                 </label>
               </div>
 
-              {networkConfig.enabled && (
+              {networkConfig.enabled && networkExpanded && (
                 <div className="grid gap-4 px-5 py-5 md:grid-cols-2 bg-slate-50">
                   <div className="space-y-3">
                     <label className="block text-base font-semibold text-slate-900">Network name</label>
