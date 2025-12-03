@@ -41,6 +41,13 @@ export const appsList = [
     category: "Monitoring",
     description: "Self-hosted monitoring tool like Uptime Robot",
     logo: "https://uptime.kuma.pet/img/icon.svg"
+  },
+  {
+    id: "qbittorrent",
+    name: "qBittorrent",
+    category: "Media",
+    description: "Torrent client with a modern web UI",
+    logo: "https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/qbittorrent.svg"
   }
 ];
 
