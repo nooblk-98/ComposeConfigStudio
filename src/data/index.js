@@ -22,13 +22,6 @@ export const appsList = [
     logo: "https://e7.pngegg.com/pngimages/510/1010/png-clipart-wordpress-com-blog-wordpress.png"
   },
   {
-    id: "grafana",
-    name: "Grafana",
-    category: "Monitoring",
-    description: "Analytics and monitoring platform with beautiful dashboards",
-    logo: "https://raw.githubusercontent.com/grafana/grafana/main/public/img/grafana_icon.svg"
-  },
-  {
     id: "nginx-proxy-manager",
     name: "Nginx Proxy Manager",
     category: "Networking",

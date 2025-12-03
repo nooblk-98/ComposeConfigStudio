@@ -18,14 +18,17 @@ export default {
       mandatory: true,
       images: [
         "louislam/uptime-kuma:latest",
-        "louislam/uptime-kuma:1"
+        "louislam/uptime-kuma:2.0.2",
+        "louislam/uptime-kuma:1.0.1"
       ],
       defaultImage: "louislam/uptime-kuma:latest",
       containerName: "uptime_kuma",
       restart: "always",
       ports: ["3001:3001"],
-      environment: {},
-      volumes: ["./uptime_kuma_data:/app/data"]
+      environment: {
+        TZ: "Asia/Colombo",
+      },
+      volumes: ["./opt/apps/uptime:/app/data"]
     }
   ],
   
