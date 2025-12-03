@@ -28,6 +28,24 @@ interface ServiceConfig {
 
 const DOCKER_ICON = 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-plain.svg';
 
+const Tooltip = ({ content, children }: { content: string; children: React.ReactNode }) => (
+  <div className="group relative inline-block">
+    {children}
+    <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-800 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 z-10">
+      {content}
+      <div className="absolute left-1/2 top-full -mt-1 h-2 w-2 -translate-x-1/2 rotate-45 bg-slate-800"></div>
+    </div>
+  </div>
+);
+
+const InfoIcon = ({ content }: { content: string }) => (
+  <Tooltip content={content}>
+    <svg className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  </Tooltip>
+);
+
 export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProps) {
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [optionalEnvValues, setOptionalEnvValues] = useState<Record<string, Record<string, string>>>(() => {
@@ -57,6 +75,34 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
   const [expandedServices, setExpandedServices] = useState<Record<string, boolean>>({});
   const [networkExpanded, setNetworkExpanded] = useState(false);
   
+  // Validation state
+  const [validationErrors, setValidationErrors] = useState<Record<string, Record<string, string>>>({});
+
+  // Auto-expand first enabled service on load
+  useEffect(() => {
+    if (app.services) {
+      const firstEnabled = app.services.find(s => serviceConfigs[s.name]?.enabled);
+      if (firstEnabled) {
+        setExpandedServices(prev => ({ ...prev, [firstEnabled.name]: true }));
+      }
+    }
+  }, []);
+
+  const validatePort = (port: string): boolean => {
+    if (!port) return true; // Empty is handled by other logic if required
+    const parts = port.split(':');
+    return parts.every(p => {
+      const num = parseInt(p, 10);
+      return !isNaN(num) && num >= 0 && num <= 65535;
+    });
+  };
+
+  const validateContainerName = (name: string): boolean => {
+    if (!name) return true;
+    // Docker container name regex: [a-zA-Z0-9][a-zA-Z0-9_.-]*
+    return /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(name);
+  };
+
   const toggleServiceExpanded = (serviceName: string) => {
     setExpandedServices(prev => ({
       ...prev,
@@ -620,6 +666,28 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
               </div>
             </div>
 
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Services Configuration</h3>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    const allExpanded = app.services?.reduce((acc, s) => ({ ...acc, [s.name]: true }), {}) || {};
+                    setExpandedServices(allExpanded);
+                  }}
+                  className="text-sm font-medium text-purple-600 hover:text-purple-700"
+                >
+                  Expand All
+                </button>
+                <span className="text-slate-300">|</span>
+                <button
+                  onClick={() => setExpandedServices({})}
+                  className="text-sm font-medium text-slate-500 hover:text-slate-700"
+                >
+                  Collapse All
+                </button>
+              </div>
+            </div>
+
             <div className="space-y-5">
               {app.services?.map((service) => {
                 const config = serviceConfigs[service.name];
@@ -628,8 +696,17 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                 const iconUrl = getServiceIcon(service);
                 const hasImage = !!config.selectedImage?.trim();
 
+                const isMandatory = service.mandatory;
+                const isEnabled = config.enabled;
+
                 return (
-                  <div key={service.name} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <div 
+                    key={service.name} 
+                    className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-200 
+                      ${isMandatory ? 'border-blue-200 ring-1 ring-blue-50' : 'border-slate-200'} 
+                      ${!isEnabled && !isMandatory ? 'opacity-75 grayscale-[0.5]' : ''}
+                    `}
+                  >
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
                       <div className="flex items-center gap-3 flex-1">
                         {config.enabled && (
@@ -661,6 +738,25 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                           <h2 className="text-lg font-semibold text-slate-900 capitalize">{service.displayName || service.name}</h2>
                           {service.description && !expandedServices[service.name] && (
                             <p className="text-sm text-slate-600">{service.description}</p>
+                          )}
+                          {!expandedServices[service.name] && config.enabled && (
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {config.portsEnabled && config.ports.length > 0 && (
+                                <span className="inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                                  Ports: {config.ports.length}
+                                </span>
+                              )}
+                              {config.volumesEnabled && config.volumes.length > 0 && (
+                                <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                                  Volumes: {config.volumes.length}
+                                </span>
+                              )}
+                              {config.restartPolicyEnabled && (
+                                <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                                  Restart: {config.restartPolicy}
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
                         {service.mandatory && (
@@ -694,13 +790,38 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div className="space-y-2">
                               <label className="block text-base font-semibold text-slate-900">Container name</label>
-                              <input
-                                type="text"
-                                value={config.containerName}
-                                onChange={(e) => updateServiceConfig(service.name, { containerName: e.target.value })}
-                                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                placeholder={service.containerName}
-                              />
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  value={config.containerName}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    updateServiceConfig(service.name, { containerName: val });
+                                    setValidationErrors(prev => ({
+                                      ...prev,
+                                      [service.name]: {
+                                        ...prev[service.name],
+                                        containerName: validateContainerName(val) ? '' : 'Invalid container name'
+                                      }
+                                    }));
+                                  }}
+                                  className={`w-full rounded-lg border px-4 py-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 
+                                    ${validationErrors[service.name]?.containerName 
+                                      ? 'border-red-300 focus:border-red-400 focus:ring-red-500/40' 
+                                      : 'border-slate-200 focus:border-purple-400 focus:ring-purple-500/40'
+                                    }`}
+                                  placeholder="e.g. my-app"
+                                />
+                                {config.containerName && !validationErrors[service.name]?.containerName && (
+                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                  </div>
+                                )}
+                              </div>
+                              {validationErrors[service.name]?.containerName && (
+                                <p className="text-sm text-red-500">{validationErrors[service.name]?.containerName}</p>
+                              )}
+
                             </div>
                             <div className="space-y-2">
                               <label className="block text-base font-semibold text-slate-900">Docker image</label>
@@ -874,7 +995,10 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                             <div className="rounded-xl border border-slate-200 bg-white p-4">
                               <div className="mb-3 flex items-center justify-between">
                                 <div>
-                                  <span className="text-base font-semibold text-slate-900">Port Mappings</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-base font-semibold text-slate-900">Port Mappings</span>
+                                    <InfoIcon content="Map host ports to container ports to access services" />
+                                  </div>
                                   <p className="text-sm text-slate-500">Expose container ports to the host</p>
                                 </div>
                                 <label className="relative inline-flex cursor-pointer items-center">
@@ -906,32 +1030,68 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                       <div key={idx} className="grid grid-cols-2 gap-3">
                                         <div>
                                           <label className="block text-sm text-slate-700 mb-1">Host port</label>
-                                          <input
-                                            type="text"
-                                            value={hostPort || ''}
-                                            onChange={(e) => {
-                                              const newPorts = [...config.ports];
-                                              newPorts[idx] = `${e.target.value}:${containerPort || '80'}`;
-                                              updateServiceConfig(service.name, { ports: newPorts });
-                                            }}
-                                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                            placeholder="8080"
-                                          />
+                                          <div className="relative">
+                                            <input
+                                              type="text"
+                                              value={hostPort || ''}
+                                              onChange={(e) => {
+                                                const val = e.target.value;
+                                                const newPorts = [...config.ports];
+                                                newPorts[idx] = `${val}:${containerPort || '80'}`;
+                                                updateServiceConfig(service.name, { ports: newPorts });
+                                                
+                                                setValidationErrors(prev => ({
+                                                  ...prev,
+                                                  [service.name]: {
+                                                    ...prev[service.name],
+                                                    [`port_${idx}_host`]: validatePort(val) ? '' : 'Invalid'
+                                                  }
+                                                }));
+                                              }}
+                                              className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 
+                                                ${validationErrors[service.name]?.[`port_${idx}_host`] 
+                                                  ? 'border-red-300 focus:border-red-400 focus:ring-red-500/40' 
+                                                  : 'border-slate-200 focus:border-purple-400 focus:ring-purple-500/40'
+                                                }`}
+                                              placeholder="8080"
+                                            />
+                                            {validationErrors[service.name]?.[`port_${idx}_host`] && (
+                                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-red-500">Invalid</span>
+                                            )}
+                                          </div>
                                         </div>
                                         <div>
                                           <label className="block text-sm text-slate-700 mb-1">Container port</label>
                                           <div className="flex gap-2">
-                                            <input
-                                              type="text"
-                                              value={containerPort || ''}
-                                              onChange={(e) => {
-                                                const newPorts = [...config.ports];
-                                                newPorts[idx] = `${hostPort || '8080'}:${e.target.value}`;
-                                                updateServiceConfig(service.name, { ports: newPorts });
-                                              }}
-                                              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                              placeholder="80"
-                                            />
+                                            <div className="relative w-full">
+                                              <input
+                                                type="text"
+                                                value={containerPort || ''}
+                                                onChange={(e) => {
+                                                  const val = e.target.value;
+                                                  const newPorts = [...config.ports];
+                                                  newPorts[idx] = `${hostPort || '8080'}:${val}`;
+                                                  updateServiceConfig(service.name, { ports: newPorts });
+
+                                                  setValidationErrors(prev => ({
+                                                    ...prev,
+                                                    [service.name]: {
+                                                      ...prev[service.name],
+                                                      [`port_${idx}_container`]: validatePort(val) ? '' : 'Invalid'
+                                                    }
+                                                  }));
+                                                }}
+                                                className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 
+                                                  ${validationErrors[service.name]?.[`port_${idx}_container`] 
+                                                    ? 'border-red-300 focus:border-red-400 focus:ring-red-500/40' 
+                                                    : 'border-slate-200 focus:border-purple-400 focus:ring-purple-500/40'
+                                                  }`}
+                                                placeholder="80"
+                                              />
+                                              {validationErrors[service.name]?.[`port_${idx}_container`] && (
+                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-red-500">Invalid</span>
+                                              )}
+                                            </div>
                                             {idx >= (defaultsRef.current[service.name]?.ports ?? 0) && (
                                               <button
                                                 type="button"
@@ -1109,7 +1269,10 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                             <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <span className="text-base font-semibold text-slate-900">Restart Policy</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-base font-semibold text-slate-900">Restart Policy</span>
+                                    <InfoIcon content="Determine when the container should restart automatically" />
+                                  </div>
                                   <p className="text-sm text-slate-500">Control container restart behavior</p>
                                 </div>
                                 <label className="relative inline-flex cursor-pointer items-center">
@@ -1164,7 +1327,10 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                     </button>
                   )}
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900">Network</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-semibold text-slate-900">Network</h3>
+                      <InfoIcon content="Define how your containers communicate with each other" />
+                    </div>
                     {!networkExpanded && networkConfig.enabled && (
                       <p className="text-base text-slate-600">Control how services communicate with each other.</p>
                     )}
@@ -1177,6 +1343,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                     onChange={(e) => setNetworkConfig(prev => ({ ...prev, enabled: e.target.checked }))}
                     className="peer sr-only"
                   />
+
                   <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
                 </label>
               </div>
@@ -1184,7 +1351,10 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
               {networkConfig.enabled && networkExpanded && (
                 <div className="grid gap-4 px-5 py-5 md:grid-cols-2 bg-slate-50">
                   <div className="space-y-3">
-                    <label className="block text-base font-semibold text-slate-900">Network name</label>
+                    <div className="flex items-center gap-2">
+                      <label className="block text-base font-semibold text-slate-900">Network name</label>
+                      <InfoIcon content="Name of the Docker network (e.g., my-app-net)" />
+                    </div>
                     <input
                       type="text"
                       value={networkConfig.name}
@@ -1193,7 +1363,10 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                       placeholder="app_network"
                     />
 
-                    <label className="block text-base font-semibold text-slate-900">Driver</label>
+                    <div className="flex items-center gap-2">
+                      <label className="block text-base font-semibold text-slate-900">Driver</label>
+                      <InfoIcon content="Network driver to use (bridge is default for single host)" />
+                    </div>
                     <select
                       value={networkConfig.driver}
                       onChange={(e) => setNetworkConfig(prev => ({ ...prev, driver: e.target.value }))}
