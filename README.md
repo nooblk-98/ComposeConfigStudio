@@ -1,241 +1,104 @@
-# Docker Stack Generator
+# Compose Config Studio
 
-A modern web application that generates Docker Compose YAML and Docker CLI commands using an intuitive UI. Built with Next.js, TypeScript, TailwindCSS, and Monaco Editor.
+Compose Config Studio is a Next.js application that helps teams design, review, and share Docker Compose stacks (and matching `docker run` commands) with live previews, guardrails, and quick copy. It keeps your service templates versioned, consistent, and easy to extend.
 
-## Features
+---
 
-- **Interactive UI**: Configure Docker containers with a clean, modern interface
-- **Real-time Generation**: Instantly see Docker Compose YAML and CLI commands as you configure
-- **Syntax Highlighting**: Monaco Editor provides VS Code-like code editing experience
-- **Copy to Clipboard**: One-click copy of generated commands
-- **Extensible**: Easily add new applications by editing JSON configuration
-- **Responsive Design**: Works seamlessly on different screen sizes
+## Why it exists
+- Make Docker stacks approachable: guide users through ports, env, volumes, labels, and networks.
+- Keep templates in code: app definitions live in `src/data`, so changes are reviewable.
+- Reduce copy/paste drift: live Compose/CLI previews stay in sync with form inputs.
+- Support variants: switch databases or service flavors without rebuilding everything.
 
-## Tech Stack
+---
 
-- **Framework**: Next.js 14 with App Router
-- **Language**: TypeScript
-- **Styling**: TailwindCSS
-- **Code Editor**: Monaco Editor (powers VS Code)
-- **State Management**: React Hooks
+## What you can do
+- Browse app presets and tweak settings with a form-first UI.
+- Watch Compose YAML and `docker run` output update instantly.
+- Edit YAML inline with Monaco, then sync changes back to the form.
+- Add your own app templates by dropping lightweight config files into `src/data`.
+- Package and share ready-made Compose bundles in `docker/` or `.github/docker/`.
 
-## Getting Started
+---
 
-### Prerequisites
+## How it works (flow)
+1. Select an app preset from the sidebar.
+2. Adjust env, ports, volumes, labels, networks, and variants in the config panel.
+3. Preview output in the right panel (tabs: Compose YAML, `docker run`).
+4. Optionally edit YAML directly; save to sync with form fields.
+5. Copy the output and run with Docker/Compose.
 
-- Node.js 18+ installed
-- npm or yarn package manager
+---
 
-### Installation
+## Tech stack
+- Next.js 14 (App Router), TypeScript, TailwindCSS
+- Monaco Editor for code-like editing
+- Custom generators/parsers in `src/utils` (Compose and CLI)
 
-1. Navigate to the project directory:
-```bash
-cd "c:\Users\suppo\Local Sites\wordpresstest\app\public\wp-content\plugins\docker-stack"
-```
+---
 
-2. Install dependencies:
+## Quick start (dev)
 ```bash
 npm install
-```
-
-3. Run the development server:
-```bash
 npm run dev
+# open http://localhost:3000
 ```
 
-4. Open your browser and navigate to:
-```
-http://localhost:3000
-```
+---
 
-### Build for Production
+## Adding app templates and Compose bundles
+- Catalog lives in `src/data`:
+  - Register base entries in `src/data/index.js` (`appsList` and dynamic loaders).
+  - Provide per-app configs in `src/data/<app>/app.js` or `main.js` for multi-variant apps.
+- Types live in `src/types/app.ts`; add optional fields there before using them in configs.
+- Ready-made Compose bundles:
+  - Place reusable files in `docker/` or `.github/docker/`.
+  - Name descriptively (for example, `docker/stack-wordpress.yml`) and link them in your docs or automation.
 
-```bash
-npm run build
-npm start
+---
+
+## Data model (essentials)
+- `AppDefinition` (see `src/types/app.ts`): describes name, logo, default ports, env, volumes, services, variants, networks, etc.
+- `appsList` (in `src/data/index.js`): registers available apps and handles dynamic loading of per-app configs.
+- Per-app config files: contain service definitions, images, ports, env defaults, volumes, and variant details.
+
+---
+
+## Project layout
 ```
-
-## Project Structure
-
-```
-docker-stack/
-├── src/
-│   ├── app/
-│   │   ├── api/
-│   │   │   └── apps/
-│   │   │       └── route.ts          # API endpoint for app definitions
-│   │   ├── globals.css               # Global styles
-│   │   ├── layout.tsx                # Root layout
-│   │   └── page.tsx                  # Main page component
-│   ├── components/
-│   │   ├── AppSidebar.tsx            # Left sidebar with app info
-│   │   ├── ConfigPanel.tsx           # Configuration form panel
-│   │   └── OutputPanel.tsx           # Docker output with tabs
-│   ├── data/
-│   │   └── apps.json                 # App definitions (easily extensible)
-│   ├── types/
-│   │   └── app.ts                    # TypeScript type definitions
-│   └── utils/
-│       └── dockerGenerator.ts        # Docker generation logic
-├── package.json
-├── tsconfig.json
-├── tailwind.config.js
-└── next.config.js
+src/
+  app/          # Routes (UI + APIs)
+  components/   # UI pieces
+  data/         # App definitions
+  types/        # Shared typings
+  utils/        # Generators/parsers
+.github/
+  workflows/    # CI/CD and release
+  docker/       # Example compose bundles
+docker/         # Additional compose bundles (user-owned)
 ```
 
-## Adding New Applications
+---
 
-To add a new application, edit `src/data/apps.json`:
+## Release and CI notes
+- `.github/workflows/release.yml`: auto-bumps tags (SemVer) and publishes GitHub Releases with notes.
+- `.github/workflows/ci-cd.yml`: lint/build, multi-arch image build+push, and remote sync/deploy steps.
+Make sure required secrets (for example, `PRIVATE_KEY`) are configured if you use the provided workflows.
 
-```json
-{
-  "apps": [
-    {
-      "id": "your-app",
-      "name": "Your App",
-      "version": "1.0.0",
-      "description": "App description with features",
-      "logo": "https://example.com/logo.png",
-      "versions": ["1.0.0", "0.9.0"],
-      "defaultPort": 8080,
-      "image": "yourorg/yourapp",
-      "tools": [
-        { "name": "Tool 1", "version": "1.0.0" }
-      ],
-      "env": {
-        "APP_ENV": {
-          "key": "APP_ENV",
-          "value": "production",
-          "description": "Application environment"
-        }
-      },
-      "volumes": {
-        "data": {
-          "path": "/var/lib/app",
-          "description": "Data directory"
-        }
-      },
-      "databases": ["sqlite", "postgres"],
-      "features": {
-        "runner": false
-      }
-    }
-  ]
-}
-```
-
-### Schema Explanation
-
-- **id**: Unique identifier for the app
-- **name**: Display name
-- **version**: Current version
-- **description**: Short description shown in sidebar
-- **logo**: URL to app logo image
-- **versions**: Array of available versions
-- **defaultPort**: Default port number
-- **image**: Docker image name (without tag)
-- **tools**: List of included tools with versions
-- **env**: Environment variables with defaults
-- **volumes**: Volume mount points with descriptions
-- **databases**: Supported database types
-- **features**: Optional features (runner, etc.)
-
-## Customization
-
-### Styling
-
-Modify `tailwind.config.js` to customize colors and theme:
-
-```javascript
-theme: {
-  extend: {
-    colors: {
-      primary: '#3b82f6',
-      secondary: '#1e293b',
-    },
-  },
-}
-```
-
-### Generator Logic
-
-Edit `src/utils/dockerGenerator.ts` to customize how Docker Compose and CLI commands are generated.
-
-### Add Custom Sections
-
-To add new configuration sections:
-
-1. Update the `AppDefinition` type in `src/types/app.ts`
-2. Add the section to your app definition in `apps.json`
-3. Create a new component or add to `ConfigPanel.tsx`
-4. Update generator functions to handle new configuration
-
-## Features in Detail
-
-### Container Settings
-- Custom container name
-- Port mapping configuration
-
-### Docker Volumes
-- Data volume (frequently changing files)
-- Config volume (configuration files)
-- Temporary volume (cloned repos, temp files)
-- Each can be toggled on/off
-
-### Database Settings
-- SQLite, MySQL, and PostgreSQL support
-- One-click database selection
-- Automatically updates environment variables
-
-### Admin User Configuration
-- Login username
-- Display name
-- Password
-- Email address
-
-### Runner Settings
-- Optional runner enablement
-- Configurable per application
-
-## API Endpoints
-
-### GET /api/apps
-Returns all available applications and their configurations.
-
-**Response:**
-```json
-{
-  "apps": [
-    { ... }
-  ]
-}
-```
+---
 
 ## Contributing
+1. Fork and branch.
+2. Run `npm run lint` and `npm run build`.
+3. Open a PR with a concise summary (and screenshots for UI changes).
 
-1. Fork the repository
-2. Create your feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+### Help wanted
+- I’m actively accepting pull requests—especially for UI polish, UX tweaks, new app templates, and CI/release improvements.
+- I’m not a full‑stack expert; if you spot a better pattern, add it with a brief note in the PR.
+- If you’re unsure where to start, open an issue outlining your idea and we can scope it together.
 
-## License
+---
 
-MIT License - feel free to use this project for any purpose.
-
-## Support
-
-For issues, questions, or contributions, please open an issue on the repository.
-
-## Example: Semaphore Configuration
-
-The application comes with a pre-configured Semaphore example that demonstrates all features:
-
-- Multiple version support (2.16, 2.15, 2.14)
-- Complete tool listing (Ansible, Bash, OpenSSH, Terraform, PowerShell)
-- Three volume types (data, config, tmp)
-- Three database options (SQLite, MySQL, PostgreSQL)
-- Admin user configuration
-- Runner support
-
-This serves as a reference for adding your own applications.
+## Purpose and license
+- Purpose: make Docker stacks easy to author, review, and reuse with a guided UI plus versioned templates.
+- License: MIT — use it, ship it.
