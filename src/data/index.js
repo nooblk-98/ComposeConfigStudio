@@ -28,12 +28,19 @@ export const appsList = [
     description: "Easy-to-use reverse proxy management with SSL support",
     logo: "https://nginxproxymanager.com/logo.svg"
   },
-    {
+  {
     id: "portainer",
     name: "Portainer",
     category: "Management",
     description: "Popular Docker container management UI",
     logo: "https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/portainer.svg"
+  },
+  {
+    id: "n8n",
+    name: "n8n",
+    category: "Automation",
+    description: "Workflow automation tool with a visual editor",
+    logo: "https://n8n.io/favicon.ico"
   },
   {
     id: "uptime-kuma",

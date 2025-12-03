@@ -81,8 +81,8 @@ export default function AppDetailPage({ params }: { params: { appId: string } })
           </div>
 
           <div className="border-t border-slate-200 pt-6">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">Choose Database Configuration</h2>
-            <p className="text-slate-600 mb-6">Select the database type for your deployment</p>
+            <h2 className="text-xl font-semibold text-slate-900 mb-4">Choose Configuration</h2>
+            <p className="text-slate-600 mb-6">Select the setup for your deployment</p>
 
             <div className="grid gap-4">
               {app.variants?.map((variant) => (
