@@ -1439,7 +1439,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                     Docker Compose
                   </span>
                 </div>
-                <div className="relative max-h-[70vh] overflow-auto border-t border-slate-100 bg-slate-50 px-4 py-5">
+                <div className="relative max-h-[70vh] overflow-auto border-t border-slate-800 bg-slate-900 px-4 py-5">
                   <button
                     onClick={() => {
                       const text = generateDockerCompose();
@@ -1450,18 +1450,18 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                         });
                       }
                     }}
-                    className="absolute right-4 top-4 rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
+                    className="absolute right-4 top-4 rounded-lg border border-slate-700 bg-slate-800 p-2 text-slate-400 hover:bg-slate-700 hover:text-slate-200 transition-colors"
                     title="Copy to clipboard"
                   >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
                   </button>
-                  <pre className="whitespace-pre-wrap break-words text-sm leading-relaxed text-emerald-700 pr-10">
+                  <pre className="whitespace-pre-wrap break-words text-sm font-mono leading-relaxed text-emerald-400 pr-10">
                     {generateDockerCompose()}
                   </pre>
                   {copied && (
-                    <div className="absolute right-4 top-14 rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700 border border-emerald-200">
+                    <div className="absolute right-4 top-14 rounded-full bg-emerald-900/30 px-3 py-1 text-sm font-semibold text-emerald-400 border border-emerald-800/50 backdrop-blur-sm">
                       Copied
                     </div>
                   )}
