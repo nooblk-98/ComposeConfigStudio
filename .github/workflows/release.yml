@@ -12,22 +12,13 @@ permissions:
 
 jobs:
   release:
-    name: Release
+    name: Create GitHub Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: "marvinpinto/action-automatic-releases@latest"
         with:
-          fetch-depth: 0
-
-      - name: Semantic Release
-        uses: cycjimmy/semantic-release-action@v4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          semantic_version: 22
-          branches: |
-            [
-              "main"
-            ]
-        
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "production"
+          prerelease: false
