@@ -1,4 +1,18 @@
-# Compose Config Studio
+<div align="center">
+
+🚢 **Compose Config Studio**
+
+Design, review, and share Docker Compose stacks with live previews and guardrails.
+
+<p>
+  <a href="https://github.com/${{GITHUB_REPOSITORY}}/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/${{GITHUB_REPOSITORY}}/ci-cd.yml?label=CI&logo=github"></a>
+  <a href="https://github.com/${{GITHUB_REPOSITORY}}/releases"><img alt="Release" src="https://img.shields.io/github/v/release/${{GITHUB_REPOSITORY}}?color=0ea5e9&label=Release&logo=github"></a>
+  <a href="https://github.com/${{GITHUB_REPOSITORY}}/issues"><img alt="Issues" src="https://img.shields.io/github/issues/${{GITHUB_REPOSITORY}}?color=f59e0b&label=Issues"></a>
+  <img alt="License" src="https://img.shields.io/github/license/${{GITHUB_REPOSITORY}}?color=10b981&label=License">
+</p>
+
+<hr/>
+</div>
 
 Compose Config Studio is a Next.js application that helps teams design, review, and share Docker Compose stacks (and matching `docker run` commands) with live previews, guardrails, and quick copy. It keeps your service templates versioned, consistent, and easy to extend.
 
