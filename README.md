@@ -4,6 +4,25 @@ Compose Config Studio is a Next.js application that helps teams design, review, 
 
 ---
 
+## Screenshots
+
+### App Selection Dashboard
+Browse available Docker applications with filtering by category and search functionality.
+
+![App Selection Dashboard](./images/app-selection-dashboard.png)
+
+### Database Configuration Selector
+Choose your preferred database configuration for multi-variant applications.
+
+![Database Configuration Selector](./images/database-configuration-selector.png)
+
+### Service Configuration Panel
+Configure services with environment variables, container names, ports, volumes, and live Docker Compose preview.
+
+![Service Configuration Panel](./images/service-configuration-panel.png)
+
+---
+
 ## Why it exists
 - Make Docker stacks approachable: guide users through ports, env, volumes, labels, and networks.
 - Keep templates in code: app definitions live in `src/data`, so changes are reviewable.
