@@ -1,15 +1,15 @@
 version: '3.8'
 
 services:
-  ComposeConfigStudio:
-    image: ghcr.io/nooblk-98/ComposeConfigStudio:latest
-    container_name: ComposeConfigStudio
+  composeconfigstudio:
+    image: ghcr.io/nooblk-98/composeconfigstudio:latest
+    container_name: composeconfigstudio
     ports:
       - "17400:80"
     restart: unless-stopped
     networks:
-      - ComposeConfigStudio
+      - composeconfigstudio
 
 networks:
-  ComposeConfigStudio:
+  composeconfigstudio:
     driver: bridge
