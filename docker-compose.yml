@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  ComposeConfigStudio:
+    image: ghcr.io/nooblk-98/ComposeConfigStudio:latest
+    container_name: ComposeConfigStudio
+    ports:
+      - "17400:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - ComposeConfigStudio
+
+networks:
+  ComposeConfigStudio:
+    driver: bridge
