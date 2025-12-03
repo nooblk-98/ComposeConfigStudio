@@ -21,6 +21,9 @@ interface ServiceConfig {
     cpus: string;
   };
   volumesEnabled: boolean;
+  portsEnabled: boolean;
+  restartPolicy: string;
+  restartPolicyEnabled: boolean;
 }
 
 const DOCKER_ICON = 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-plain.svg';
@@ -84,6 +87,9 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
         ports: [...(service.ports || [])],
         volumes: [...(service.volumes || [])],
         volumesEnabled: true,
+        portsEnabled: (service.ports || []).length > 0,
+        restartPolicy: service.restart || 'always',
+        restartPolicyEnabled: !!service.restart,
         resourceLimits: {
           enabled: false,
           memory: '',
@@ -352,13 +358,17 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
       }
       let cmd = `docker run -d --name ${config.containerName}`;
 
+      if (config.restartPolicyEnabled && config.restartPolicy) {
+        cmd += ` --restart ${config.restartPolicy}`;
+      }
+
       if (networkConfig.enabled) {
         cmd += ` --network ${networkConfig.name}`;
       }
 
       config.ports.forEach(port => {
         const trimmed = port.trim();
-        if (trimmed) {
+        if (trimmed && config.portsEnabled) {
           cmd += ` -p ${trimmed}`;
         }
       });
@@ -431,9 +441,11 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
       yaml += `  ${service.name}:\n`;
       yaml += `    image: ${config.selectedImage}\n`;
       yaml += `    container_name: ${config.containerName}\n`;
-      if (service.restart) yaml += `    restart: ${service.restart}\n`;
+      if (config.restartPolicyEnabled && config.restartPolicy) {
+        yaml += `    restart: ${config.restartPolicy}\n`;
+      }
 
-      if (config.ports.length > 0) {
+      if (config.ports.length > 0 && config.portsEnabled) {
         yaml += `    ports:\n`;
         config.ports.forEach(port => yaml += `      - "${port}"\n`);
       }
@@ -837,71 +849,109 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                               </div>
                             )}
 
-                          {config.ports.length > 0 && (
+                          {hasImage && (
                             <div className="rounded-xl border border-slate-200 bg-white p-4">
                               <div className="mb-3 flex items-center justify-between">
-                                <span className="text-base font-semibold text-slate-900">Ports</span>
-                                <button
-                                  type="button"
-                                  onClick={() => updateServiceConfig(service.name, { ports: [...config.ports, ''] })}
-                                  className="text-sm font-semibold text-purple-700 hover:text-purple-900"
-                                >
-                                  + Add
-                                </button>
+                                <div>
+                                  <span className="text-base font-semibold text-slate-900">Port Mappings</span>
+                                  <p className="text-sm text-slate-500">Expose container ports to the host</p>
+                                </div>
+                                <label className="relative inline-flex cursor-pointer items-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={config.portsEnabled}
+                                    onChange={(e) => updateServiceConfig(service.name, { portsEnabled: e.target.checked })}
+                                    className="peer sr-only"
+                                  />
+                                  <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
+                                </label>
                               </div>
-                              <div className="space-y-2">
-                                {config.ports.map((port, idx) => {
-                                  const [hostPort, containerPort] = port.split(':');
-                                  return (
-                                    <div key={idx} className="grid grid-cols-2 gap-3">
-                                      <div>
-                                        <label className="block text-sm text-slate-700 mb-1">Host port</label>
-                                        <input
-                                          type="text"
-                                          value={hostPort || ''}
-                                          onChange={(e) => {
-                                            const newPorts = [...config.ports];
-                                            newPorts[idx] = `${e.target.value}:${containerPort || '80'}`;
-                                            updateServiceConfig(service.name, { ports: newPorts });
-                                          }}
-                                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                          placeholder="8080"
-                                        />
-                                      </div>
-                                      <div>
-                                        <label className="block text-sm text-slate-700 mb-1">Container port</label>
-                                        <div className="flex gap-2">
+                              {config.portsEnabled && config.ports.length > 0 && (
+                                <div className="mb-3 flex items-center justify-end">
+                                  <button
+                                    type="button"
+                                    onClick={() => updateServiceConfig(service.name, { ports: [...config.ports, ''] })}
+                                    className="text-sm font-semibold text-purple-700 hover:text-purple-900"
+                                  >
+                                    + Add
+                                  </button>
+                                </div>
+                              )}
+                              {config.portsEnabled && config.ports.length > 0 ? (
+                                <div className="space-y-2">
+                                  {config.ports.map((port, idx) => {
+                                    const [hostPort, containerPort] = port.split(':');
+                                    return (
+                                      <div key={idx} className="grid grid-cols-2 gap-3">
+                                        <div>
+                                          <label className="block text-sm text-slate-700 mb-1">Host port</label>
                                           <input
                                             type="text"
-                                            value={containerPort || ''}
+                                            value={hostPort || ''}
                                             onChange={(e) => {
                                               const newPorts = [...config.ports];
-                                              newPorts[idx] = `${hostPort || '8080'}:${e.target.value}`;
+                                              newPorts[idx] = `${e.target.value}:${containerPort || '80'}`;
                                               updateServiceConfig(service.name, { ports: newPorts });
                                             }}
                                             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                                            placeholder="80"
+                                            placeholder="8080"
                                           />
-                                          {idx >= (defaultsRef.current[service.name]?.ports ?? 0) && (
-                                            <button
-                                              type="button"
-                                              onClick={() => removePort(service.name, idx)}
-                                              className="p-2 rounded-md border border-slate-200 text-red-500 hover:bg-red-50 hover:border-red-200"
-                                              title="Remove port mapping"
-                                              aria-label="Remove port mapping"
-                                            >
-                                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                                <path d="M9 3h6a1 1 0 0 1 .99.86L16 5h4a1 1 0 1 1 0 2h-.99l-.8 12.06A2 2 0 0 1 16.21 21H7.8a2 2 0 0 1-1.99-1.94L5 7H4a1 1 0 0 1 0-2h4l.01-1.14A1 1 0 0 1 9 3Zm6.01 4H8.99l-.7 12h7.42l.3-12Z" />
-                                                <path d="M10 10a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
-                                              </svg>
-                                            </button>
-                                          )}
+                                        </div>
+                                        <div>
+                                          <label className="block text-sm text-slate-700 mb-1">Container port</label>
+                                          <div className="flex gap-2">
+                                            <input
+                                              type="text"
+                                              value={containerPort || ''}
+                                              onChange={(e) => {
+                                                const newPorts = [...config.ports];
+                                                newPorts[idx] = `${hostPort || '8080'}:${e.target.value}`;
+                                                updateServiceConfig(service.name, { ports: newPorts });
+                                              }}
+                                              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                              placeholder="80"
+                                            />
+                                            {idx >= (defaultsRef.current[service.name]?.ports ?? 0) && (
+                                              <button
+                                                type="button"
+                                                onClick={() => removePort(service.name, idx)}
+                                                className="p-2 rounded-md border border-slate-200 text-red-500 hover:bg-red-50 hover:border-red-200"
+                                                title="Remove port mapping"
+                                                aria-label="Remove port mapping"
+                                              >
+                                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                  <path d="M9 3h6a1 1 0 0 1 .99.86L16 5h4a1 1 0 1 1 0 2h-.99l-.8 12.06A2 2 0 0 1 16.21 21H7.8a2 2 0 0 1-1.99-1.94L5 7H4a1 1 0 0 1 0-2h4l.01-1.14A1 1 0 0 1 9 3Zm6.01 4H8.99l-.7 12h7.42l.3-12Z" />
+                                                  <path d="M10 10a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Z" />
+                                                </svg>
+                                              </button>
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : config.portsEnabled ? (
+                                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-8 text-center">
+                                  <svg className="mx-auto h-10 w-10 text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                  <p className="text-sm font-medium text-slate-700 mb-1">No ports configured</p>
+                                  <p className="text-sm text-slate-500 mb-3">Click "+ Add" to expose a port from this container to your host</p>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateServiceConfig(service.name, { ports: [...config.ports, ''] })}
+                                    className="inline-flex items-center gap-1 text-sm font-semibold text-purple-700 hover:text-purple-900"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Add Port
+                                  </button>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-slate-500">Port mappings are disabled for this service.</p>
+                              )}
                             </div>
                           )}
 
@@ -1030,6 +1080,43 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                     />
                                   </div>
                                 </div>
+                              )}
+                            </div>
+                          )}
+
+                          {hasImage && (
+                            <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <span className="text-base font-semibold text-slate-900">Restart Policy</span>
+                                  <p className="text-sm text-slate-500">Control container restart behavior</p>
+                                </div>
+                                <label className="relative inline-flex cursor-pointer items-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={config.restartPolicyEnabled}
+                                    onChange={(e) => updateServiceConfig(service.name, { restartPolicyEnabled: e.target.checked })}
+                                    className="peer sr-only"
+                                  />
+                                  <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
+                                </label>
+                              </div>
+                              {config.restartPolicyEnabled ? (
+                                <div className="space-y-1">
+                                  <label className="block text-sm font-semibold text-slate-800">Policy</label>
+                                  <select
+                                    value={config.restartPolicy}
+                                    onChange={(e) => updateServiceConfig(service.name, { restartPolicy: e.target.value })}
+                                    className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                  >
+                                    <option value="no">no - Never restart</option>
+                                    <option value="always">always - Always restart</option>
+                                    <option value="on-failure">on-failure - Restart on failure</option>
+                                    <option value="unless-stopped">unless-stopped - Always restart unless manually stopped</option>
+                                  </select>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-slate-500">Restart policy is disabled for this service.</p>
                               )}
                             </div>
                           )}
