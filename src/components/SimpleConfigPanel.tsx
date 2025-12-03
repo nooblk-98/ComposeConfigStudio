@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { AppDefinition } from '@/types/app';
+import { AppDefinition, ServiceDefinition } from '@/types/app';
 
 interface SimpleConfigPanelProps {
   app: AppDefinition;
@@ -110,7 +110,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
     }));
   };
   
-  const getServiceIcon = () => DOCKER_ICON;
+  const getServiceIcon = (_service?: ServiceDefinition) => DOCKER_ICON;
 
   // Track default values to prevent removing predefined entries
   const defaultsRef = useRef<Record<string, { envKeys: Set<string>; ports: number; volumes: number }>>({});
@@ -140,7 +140,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
       configs[service.name] = {
         enabled: shouldEnable,
         selectedImage: service.defaultImage,
-        containerName: service.containerName,
+        containerName: service.containerName || '',
         environment: { ...service.environment },
         ports: [...(service.ports || [])],
         volumes: [...(service.volumes || [])],
@@ -242,7 +242,7 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
         ?.filter(s => s.group === group)
         .forEach(s => {
           // Enable if it's the selected service OR if it's a dependency of the selected service
-          const isDependency = selectedSvc?.dependsOn?.includes(s.name);
+          const isDependency = selectedSvc?.dependsOn?.includes(s.name) ?? false;
           next[s.name] = {
             ...next[s.name],
             enabled: s.name === selectedService || isDependency

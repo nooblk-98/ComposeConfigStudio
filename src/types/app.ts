@@ -73,6 +73,7 @@ export interface AppDefinition {
   // New simplified service-based structure
   services?: ServiceDefinition[]; // All services (main app, database, addons)
   namedVolumes?: string[]; // Named volumes to create (e.g., ["db_data"])
+  networks?: string[]; // Optional predefined networks
   variants?: VariantDefinition[]; // Multiple complete app variants (new system)
 
   // Legacy fields (keeping for backward compatibility)

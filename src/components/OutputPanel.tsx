@@ -65,7 +65,7 @@ export default function OutputPanel({ app, config, updateConfig }: OutputPanelPr
       }
       if (result.volumes) {
         // Only add as custom volumes if not matching existing named ones
-        const existingPaths = Object.values(app.volumes).map(v => v.path);
+        const existingPaths = Object.values(app.volumes ?? {}).map(v => v.path);
         const customVols: { name: string; hostPath: string; containerPath: string }[] = [];
         result.volumes.forEach(v => {
           // format host:container

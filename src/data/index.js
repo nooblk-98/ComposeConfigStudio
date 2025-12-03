@@ -1,6 +1,18 @@
 // List of all available apps
 // Each app has its own folder with an app.js configuration file
 
+/**
+ * @typedef {Object} AppDefinition
+ * @property {string} id
+ * @property {string} name
+ * @property {string} category
+ * @property {string} description
+ * @property {string} logo
+ * @property {string} [version]
+ * @property {number} [defaultPort]
+ */
+
+/** @type {AppDefinition[]} */
 export const appsList = [
   {
     id: "wordpress",
@@ -33,6 +45,10 @@ export const appsList = [
 ];
 
 // Export helper to get app config dynamically
+/**
+ * @param {string} appId
+ * @returns {Promise<AppDefinition | null>}
+ */
 export async function getAppConfig(appId) {
   try {
     // Try to load main.js first (for multi-variant apps)

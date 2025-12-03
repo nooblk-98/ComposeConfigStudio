@@ -5,18 +5,20 @@ export function generateDockerCompose(app: AppDefinition, config: AppConfig): st
   
   // Build volumes array
   const volumes: string[] = [];
+  const appVolumes = app.volumes ?? {};
   Object.entries(config.volumes).forEach(([key, enabled]) => {
-    if (enabled && app.volumes[key]) {
+    const volumeDef = appVolumes[key];
+    if (enabled && volumeDef) {
         const override = config.volumeOverrides?.[key];
         if (override) {
           // If hostPath provided treat as bind mount, else named volume
           if (override.hostPath) {
-            volumes.push(`      - ${override.hostPath}:${override.containerPath || app.volumes[key].path}`);
+            volumes.push(`      - ${override.hostPath}:${override.containerPath || volumeDef.path}`);
           } else {
-            volumes.push(`      - ${serviceName}_${key}:${override.containerPath || app.volumes[key].path}`);
+            volumes.push(`      - ${serviceName}_${key}:${override.containerPath || volumeDef.path}`);
           }
         } else {
-          volumes.push(`      - ${serviceName}_${key}:${app.volumes[key].path}`);
+          volumes.push(`      - ${serviceName}_${key}:${volumeDef.path}`);
         }
     }
   });
@@ -129,10 +131,11 @@ export function generateDockerCompose(app: AppDefinition, config: AppConfig): st
 
     // DB Service Generation (Internal)
     let dbServiceYaml = '';
-    if (!config.useExternalDb && (app.databases.length > 0 || app.needs_db)) {
+    const appDatabases = app.databases ?? [];
+    if (!config.useExternalDb && (appDatabases.length > 0 || app.needs_db)) {
        // We need to generate a DB service.
        // Default to the first supported DB or the selected one.
-       const dbType = config.database || app.databases[0] || 'mysql';
+       const dbType = config.database || appDatabases[0] || 'mysql';
        const dbServiceName = `${serviceName}_db`;
        
        // Update main app env to point to this DB
@@ -224,6 +227,7 @@ ${dbServiceYaml ? `  ${serviceName}_db_data:` : ''}` : ''}`;
 
 export function generateDockerRun(app: AppDefinition, config: AppConfig): string {
   const containerName = config.name.toLowerCase().replace(/\s+/g, '-');
+  const appVolumes = app.volumes ?? {};
   
   let command = `docker run -d \\
   --name ${containerName} \\
@@ -247,16 +251,17 @@ export function generateDockerRun(app: AppDefinition, config: AppConfig): string
 
   // Add volumes
   Object.entries(config.volumes).forEach(([key, enabled]) => {
-    if (enabled && app.volumes[key]) {
+    const volumeDef = appVolumes[key];
+    if (enabled && volumeDef) {
         const override = config.volumeOverrides?.[key];
         if (override) {
           if (override.hostPath) {
-            command += ` \\\n  -v ${override.hostPath}:${override.containerPath || app.volumes[key].path}`;
+            command += ` \\\n  -v ${override.hostPath}:${override.containerPath || volumeDef.path}`;
           } else {
-            command += ` \\\n  -v ${containerName}_${key}:${override.containerPath || app.volumes[key].path}`;
+            command += ` \\\n  -v ${containerName}_${key}:${override.containerPath || volumeDef.path}`;
           }
         } else {
-          command += ` \\\n  -v ${containerName}_${key}:${app.volumes[key].path}`;
+          command += ` \\\n  -v ${containerName}_${key}:${volumeDef.path}`;
         }
     }
   });
