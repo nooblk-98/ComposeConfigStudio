@@ -88,7 +88,7 @@ export default function AppDetailPage({ params }: { params: { appId: string } })
               {app.variants?.map((variant) => (
                 <button
                   key={variant.id}
-                  onClick={() => router.push(`/app/${params.appId}/${variant.id}`)}
+                  onClick={() => router.push(`/app/${params.appId}/${encodeURIComponent(variant.id)}`)}
                   className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all text-left group"
                 >
                   <div>

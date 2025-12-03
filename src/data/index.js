@@ -28,6 +28,13 @@ export const appsList = [
     description: "Easy-to-use reverse proxy management with SSL support",
     logo: "https://nginxproxymanager.com/logo.svg"
   },
+    {
+    id: "portainer",
+    name: "Portainer",
+    category: "Management",
+    description: "Popular Docker container management UI",
+    logo: "https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/portainer.svg"
+  },
   {
     id: "uptime-kuma",
     name: "Uptime Kuma",
