@@ -1,137 +1,363 @@
 <div align="center">
 
-🚢 **Compose Config Studio**
+# 🚢 Compose Config Studio
 
-Design, review, and share Docker Compose stacks with live previews and guardrails.
+**Design, review, and share Docker Compose stacks with live previews and guardrails.**
 
-<p>
-  <a href="https://github.com/${{GITHUB_REPOSITORY}}/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/${{GITHUB_REPOSITORY}}/ci-cd.yml?label=CI&logo=github"></a>
-  <a href="https://github.com/${{GITHUB_REPOSITORY}}/releases"><img alt="Release" src="https://img.shields.io/github/v/release/${{GITHUB_REPOSITORY}}?color=0ea5e9&label=Release&logo=github"></a>
-  <a href="https://github.com/${{GITHUB_REPOSITORY}}/issues"><img alt="Issues" src="https://img.shields.io/github/issues/${{GITHUB_REPOSITORY}}?color=f59e0b&label=Issues"></a>
-  <img alt="License" src="https://img.shields.io/github/license/${{GITHUB_REPOSITORY}}?color=10b981&label=License">
-</p>
+[![CI](https://img.shields.io/github/actions/workflow/status/nooblk-98/ComposeConfigStudio/ci-cd.yml?label=CI&logo=github&style=flat-square)](https://github.com/nooblk-98/ComposeConfigStudio/actions)
+[![Release](https://img.shields.io/github/v/release/nooblk-98/ComposeConfigStudio?color=0ea5e9&label=Release&logo=github&style=flat-square)](https://github.com/nooblk-98/ComposeConfigStudio/releases)
+[![Issues](https://img.shields.io/github/issues/nooblk-98/ComposeConfigStudio?color=f59e0b&label=Issues&style=flat-square)](https://github.com/nooblk-98/ComposeConfigStudio/issues)
+[![License](https://img.shields.io/github/license/nooblk-98/ComposeConfigStudio?color=10b981&label=License&style=flat-square)](LICENSE)
 
-<hr/>
+<br>
+
+![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker)
+![TailwindCSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css)
+
+---
+
 </div>
 
-Compose Config Studio is a Next.js application that helps teams design, review, and share Docker Compose stacks (and matching `docker run` commands) with live previews, guardrails, and quick copy. It keeps your service templates versioned, consistent, and easy to extend.
+## 📖 Overview
+
+Compose Config Studio is a **Next.js application** that helps teams design, review, and share Docker Compose stacks (and matching `docker run` commands) with **live previews**, **guardrails**, and **quick copy**. It keeps your service templates versioned, consistent, and easy to extend.
 
 ---
 
-## Screenshots
+## 📸 Screenshots
+
+<div align="center">
 
 ### App Selection Dashboard
-Browse available Docker applications with filtering by category and search functionality.
+![App Selection Dashboard](images/app-selection-dashboard.png)
+*Browse and select from available application presets*
 
-![App Selection Dashboard](./images/app-selection-dashboard.png)
-
-### Database Configuration Selector
-Choose your preferred database configuration for multi-variant applications.
-
-![Database Configuration Selector](./images/database-configuration-selector.png)
+<br>
 
 ### Service Configuration Panel
-Configure services with environment variables, container names, ports, volumes, and live Docker Compose preview.
+![Service Configuration Panel](images/service-configuration-panel.png)
+*Configure ports, environment variables, volumes, and more*
 
-![Service Configuration Panel](./images/service-configuration-panel.png)
+<br>
+
+### Database Configuration Selector
+![Database Configuration Selector](images/database-configuration-selector.png)
+*Choose and configure database variants for your stack*
+
+</div>
+
+## ✨ Features
+
+<table>
+<tr>
+<td width="50%">
+
+### 🎯 **User-Friendly Interface**
+- Browse app presets with a form-first UI
+- Tweak settings without touching YAML
+- Live previews for instant feedback
+- Guided configuration for ports, env, volumes, and networks
+
+</td>
+<td width="50%">
+
+### 🔄 **Real-Time Updates**
+- Watch Compose YAML update instantly
+- Generate matching `docker run` commands
+- Edit YAML inline with Monaco Editor
+- Sync changes back to the form
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 📦 **Template System**
+- App definitions live in code (`src/data`)
+- Version-controlled templates
+- Support for multiple variants
+- Easy to add new applications
+
+</td>
+<td width="50%">
+
+### 🛡️ **Best Practices**
+- Built-in guardrails
+- Reduce copy/paste drift
+- Consistent service templates
+- Ready-made Compose bundles
+
+</td>
+</tr>
+</table>
 
 ---
 
-## Why it exists
-- Make Docker stacks approachable: guide users through ports, env, volumes, labels, and networks.
-- Keep templates in code: app definitions live in `src/data`, so changes are reviewable.
-- Reduce copy/paste drift: live Compose/CLI previews stay in sync with form inputs.
-- Support variants: switch databases or service flavors without rebuilding everything.
+## 🚀 Quick Start
 
----
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
 
-## What you can do
-- Browse app presets and tweak settings with a form-first UI.
-- Watch Compose YAML and `docker run` output update instantly.
-- Edit YAML inline with Monaco, then sync changes back to the form.
-- Add your own app templates by dropping lightweight config files into `src/data`.
-- Package and share ready-made Compose bundles in `docker/` or `.github/docker/`.
+### Installation
 
----
-
-## How it works (flow)
-1. Select an app preset from the sidebar.
-2. Adjust env, ports, volumes, labels, networks, and variants in the config panel.
-3. Preview output in the right panel (tabs: Compose YAML, `docker run`).
-4. Optionally edit YAML directly; save to sync with form fields.
-5. Copy the output and run with Docker/Compose.
-
----
-
-## Tech stack
-- Next.js 14 (App Router), TypeScript, TailwindCSS
-- Monaco Editor for code-like editing
-- Custom generators/parsers in `src/utils` (Compose and CLI)
-
----
-
-## Quick start (dev)
 ```bash
+# Clone the repository
+git clone https://github.com/nooblk-98/ComposeConfigStudio.git
+cd ComposeConfigStudio
+
+# Install dependencies
 npm install
+
+# Start the development server
 npm run dev
-# open http://localhost:3000
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Production Build
+
+```bash
+npm run build
+npm start
 ```
 
 ---
 
-## Adding app templates and Compose bundles
-- Catalog lives in `src/data`:
-  - Register base entries in `src/data/index.js` (`appsList` and dynamic loaders).
-  - Provide per-app configs in `src/data/<app>/app.js` or `main.js` for multi-variant apps.
-- Types live in `src/types/app.ts`; add optional fields there before using them in configs.
-- Ready-made Compose bundles:
-  - Place reusable files in `docker/` or `.github/docker/`.
-  - Name descriptively (for example, `docker/stack-wordpress.yml`) and link them in your docs or automation.
+## 📋 How It Works
 
----
-
-## Data model (essentials)
-- `AppDefinition` (see `src/types/app.ts`): describes name, logo, default ports, env, volumes, services, variants, networks, etc.
-- `appsList` (in `src/data/index.js`): registers available apps and handles dynamic loading of per-app configs.
-- Per-app config files: contain service definitions, images, ports, env defaults, volumes, and variant details.
-
----
-
-## Project layout
-```
-src/
-  app/          # Routes (UI + APIs)
-  components/   # UI pieces
-  data/         # App definitions
-  types/        # Shared typings
-  utils/        # Generators/parsers
-.github/
-  workflows/    # CI/CD and release
-  docker/       # Example compose bundles
-docker/         # Additional compose bundles (user-owned)
+```mermaid
+graph LR
+    A[Select App Preset] --> B[Configure Settings]
+    B --> C[Live Preview]
+    C --> D{Edit YAML?}
+    D -->|Yes| E[Monaco Editor]
+    E --> F[Sync to Form]
+    D -->|No| G[Copy Output]
+    F --> G
+    G --> H[Run with Docker]
 ```
 
----
-
-## Release and CI notes
-- `.github/workflows/release.yml`: auto-bumps tags (SemVer) and publishes GitHub Releases with notes.
-- `.github/workflows/ci-cd.yml`: lint/build, multi-arch image build+push, and remote sync/deploy steps.
-Make sure required secrets (for example, `PRIVATE_KEY`) are configured if you use the provided workflows.
-
----
-
-## Contributing
-1. Fork and branch.
-2. Run `npm run lint` and `npm run build`.
-3. Open a PR with a concise summary (and screenshots for UI changes).
-
-### Help wanted
-- I’m actively accepting pull requests—especially for UI polish, UX tweaks, new app templates, and CI/release improvements.
-- I’m not a full‑stack expert; if you spot a better pattern, add it with a brief note in the PR.
-- If you’re unsure where to start, open an issue outlining your idea and we can scope it together.
+1. **Select** an app preset from the sidebar
+2. **Configure** env vars, ports, volumes, labels, networks, and variants
+3. **Preview** output in real-time (Compose YAML & `docker run`)
+4. **Edit** YAML directly if needed (with Monaco Editor)
+5. **Copy** and run with Docker/Compose
 
 ---
 
-## Purpose and license
-- Purpose: make Docker stacks easy to author, review, and reuse with a guided UI plus versioned templates.
-- License: MIT — use it, ship it.
+## 🏗️ Tech Stack
+
+| Category | Technologies |
+|----------|-------------|
+| **Framework** | Next.js 14 (App Router) |
+| **Language** | TypeScript 5.0 |
+| **Styling** | TailwindCSS |
+| **Editor** | Monaco Editor |
+| **Container** | Docker & Docker Compose |
+| **Utils** | Custom generators/parsers |
+
+---
+
+## 📁 Project Structure
+
+```
+ComposeConfigStudio/
+├── src/
+│   ├── app/              # Next.js routes (UI + API)
+│   │   ├── api/          # API endpoints
+│   │   └── app/          # App-specific pages
+│   ├── components/       # React components
+│   │   ├── AppList.tsx
+│   │   ├── ConfigPanel.tsx
+│   │   └── OutputPanel.tsx
+│   ├── data/             # App definitions & templates
+│   │   ├── index.js      # App registry
+│   │   ├── wordpress/    # WordPress variants
+│   │   ├── nginx-proxy-manager/
+│   │   └── uptime-kuma/
+│   ├── types/            # TypeScript definitions
+│   └── utils/            # Generators & parsers
+├── docker/               # Ready-made Compose bundles
+├── .github/
+│   ├── workflows/        # CI/CD automation
+│   └── docker/           # Example compose files
+└── public/               # Static assets
+```
+
+---
+
+## 🔧 Adding New App Templates
+
+### 1. Register the App
+
+Add your app to `src/data/index.js`:
+
+```javascript
+export const appsList = [
+  // ... existing apps
+  {
+    id: 'myapp',
+    name: 'My App',
+    logo: '🎯',
+    loader: () => import('./myapp/app.js')
+  }
+];
+```
+
+### 2. Create App Configuration
+
+Create `src/data/myapp/app.js`:
+
+```javascript
+export const appDefinition = {
+  name: 'My App',
+  logo: '🎯',
+  services: {
+    myapp: {
+      image: 'myapp:latest',
+      ports: ['8080:8080'],
+      environment: {
+        APP_ENV: 'production'
+      }
+    }
+  }
+};
+```
+
+### 3. Define Types (Optional)
+
+Update `src/types/app.ts` for custom fields:
+
+```typescript
+export interface AppDefinition {
+  name: string;
+  logo: string;
+  services: Record<string, ServiceConfig>;
+  // Add your custom fields here
+}
+```
+
+---
+
+## 📦 Ready-Made Compose Bundles
+
+Place reusable Compose files in:
+- `docker/` - User-owned bundles
+- `.github/docker/` - Example bundles
+
+Example: `docker/stack-wordpress.yml`
+
+```yaml
+services:
+  wordpress:
+    image: wordpress:latest
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: wordpress
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: wordpress
+```
+
+---
+
+## 🔄 CI/CD & Release
+
+### Automated Workflows
+
+| Workflow | Purpose |
+|----------|---------|
+| **ci-cd.yml** | Lint, build, multi-arch image build+push, remote sync/deploy |
+| **release.yml** | Auto-bump tags (SemVer), publish GitHub Releases with notes |
+
+### Required Secrets
+
+Ensure these secrets are configured in your repository settings:
+- `PRIVATE_KEY` - SSH key for remote deployment
+- Additional secrets as needed by your workflows
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how you can help:
+
+### Get Started
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+### Before Submitting
+
+```bash
+# Run linting
+npm run lint
+
+# Run build to ensure no errors
+npm run build
+```
+
+### What We're Looking For
+
+- 🎨 **UI/UX improvements** - Make it more beautiful and intuitive
+- 📱 **New app templates** - Add support for more applications
+- 🐛 **Bug fixes** - Help squash those pesky bugs
+- 📚 **Documentation** - Improve guides and examples
+- ⚙️ **CI/CD enhancements** - Better automation workflows
+
+### Pull Request Guidelines
+
+- Include a **clear description** of changes
+- Add **screenshots** for UI changes
+- Keep changes **focused** and atomic
+- Update **documentation** if needed
+
+---
+
+## 💡 Help Wanted
+
+> **Note**: I'm not a full-stack expert! If you spot a better pattern or approach, please share it with a brief note in your PR. Open an issue if you're unsure where to start—we can scope it together.
+
+I'm actively accepting pull requests, especially for:
+- UI polish and UX improvements
+- New application templates
+- Performance optimizations
+- Better error handling
+- Test coverage
+
+---
+
+## 📜 License
+
+**MIT License** - Feel free to use, modify, and distribute.
+
+See [LICENSE](LICENSE) for details.
+
+---
+
+## 🎯 Purpose
+
+Make Docker stacks easy to **author**, **review**, and **reuse** with:
+- ✅ Guided UI for non-experts
+- ✅ Versioned templates in code
+- ✅ Live previews and validation
+- ✅ Quick copy-paste workflows
+
+---
+
+<div align="center">
+
+**[⭐ Star this repo](https://github.com/nooblk-98/ComposeConfigStudio)** if you find it helpful!
+
+Made with ❤️ by the community
+
+</div>
