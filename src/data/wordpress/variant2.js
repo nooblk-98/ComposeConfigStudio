@@ -5,8 +5,8 @@ export default {
   category: "CMS",
   logo: "https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/wordpress.svg",
   version: "latest",
-  defaultPort: 8080,
-  databases: ["mysql", "mariadb"],
+  defaultPort: 80,
+  databases: ["mysql"],
   tools: [
     { name: "PHP", version: "8.2" },
     { name: "Apache", version: "2.4" }
@@ -26,7 +26,7 @@ export default {
       defaultImage: "wordpress:apache",
       containerName: "wordpress",
       restart: "always",
-      ports: ["8080:80"],
+      ports: ["80:80"],
       environment: {
         WORDPRESS_DB_HOST: "database",
         WORDPRESS_DB_USER: "wpuser",
@@ -47,9 +47,6 @@ export default {
       images: [
         "mariadb:10.6",
         "mariadb:11",
-        "mysql:8.0",
-        "mysql:8.4",
-        "mysql:5.7"
       ],
       defaultImage: "mariadb:10.6",
       containerName: "database",
