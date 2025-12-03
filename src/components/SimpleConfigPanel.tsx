@@ -391,6 +391,14 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
     attachable: true
   });
 
+  const versionLabel = app.version
+    ? app.version === 'latest'
+      ? 'latest'
+      : app.version.startsWith('v')
+        ? app.version
+        : `v${app.version}`
+    : null;
+
   const generateDockerCommand = () => {
     const enabledServices = app.services?.filter(s => serviceConfigs[s.name]?.enabled);
     if (!enabledServices || enabledServices.length === 0) return '';
@@ -642,12 +650,8 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                     <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 border border-emerald-200">
                       {app.category}
                     </span>
-                    <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700 border border-blue-200">v{app.version}</span>
-                    {app.defaultPort && (
-                      <span className="rounded-full bg-purple-50 px-3 py-1 text-purple-700 border border-purple-200">Default port {app.defaultPort}</span>
-                    )}
-                    {app.version && (
-                      <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700 border border-blue-200">{app.version}</span>
+                    {versionLabel && (
+                      <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700 border border-blue-200">{versionLabel}</span>
                     )}
                   </div>
                 </div>
