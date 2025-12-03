@@ -399,6 +399,18 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
         : `v${app.version}`
     : null;
 
+  const downloadCompose = () => {
+    const text = generateDockerCompose();
+    if (!text.trim()) return;
+    const blob = new Blob([text], { type: 'text/yaml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'docker-compose.yml';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const generateDockerCommand = () => {
     const enabledServices = app.services?.filter(s => serviceConfigs[s.name]?.enabled);
     if (!enabledServices || enabledServices.length === 0) return '';
@@ -1444,23 +1456,35 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                   </span>
                 </div>
                 <div className="relative max-h-[70vh] overflow-auto border-t border-slate-800 bg-slate-900 px-4 py-5">
-                  <button
-                    onClick={() => {
-                      const text = generateDockerCompose();
-                      if (text.trim().length > 0) {
-                        navigator.clipboard.writeText(text).then(() => {
-                          setCopied(true);
-                          setTimeout(() => setCopied(false), 2000);
-                        });
-                      }
-                    }}
-                    className="absolute right-4 top-4 rounded-lg border border-slate-700 bg-slate-800 p-2 text-slate-400 hover:bg-slate-700 hover:text-slate-200 transition-colors"
-                    title="Copy to clipboard"
-                  >
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                  </button>
+                  <div className="absolute right-4 top-4 flex items-center gap-2">
+                    <button
+                      onClick={downloadCompose}
+                      className="rounded-lg border border-slate-700 bg-slate-800 p-2 text-slate-400 hover:bg-slate-700 hover:text-slate-200 transition-colors"
+                      title="Download docker-compose.yml"
+                    >
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v14m0 0-4-4m4 4 4-4" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const text = generateDockerCompose();
+                        if (text.trim().length > 0) {
+                          navigator.clipboard.writeText(text).then(() => {
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          });
+                        }
+                      }}
+                      className="rounded-lg border border-slate-700 bg-slate-800 p-2 text-slate-400 hover:bg-slate-700 hover:text-slate-200 transition-colors"
+                      title="Copy to clipboard"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                  </div>
                   <pre className="whitespace-pre-wrap break-words text-sm font-mono leading-relaxed text-emerald-400 pr-10">
                     {generateDockerCompose()}
                   </pre>
