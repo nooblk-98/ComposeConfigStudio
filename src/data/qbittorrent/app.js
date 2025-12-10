@@ -1,7 +1,7 @@
 export default {
   id: "qbittorrent",
   name: "qBittorrent",
-  description: "Torrent client with a modern web UI",
+  description: "qBittorrent is a free and open-source BitTorrent client that offers a modern web UI for managing torrent downloads. It features search functionality, RSS feed support, bandwidth limits, and cross-platform compatibility for efficient file sharing.",
   category: "Media",
   logo: "https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/qbittorrent.svg",
   version: "latest",

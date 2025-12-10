@@ -1,7 +1,7 @@
 export default {
   id: "grafana",
   name: "Grafana",
-  description: "Analytics and monitoring platform with beautiful dashboards",
+  description: "Grafana is an open-source analytics and interactive visualization web application that provides charts, graphs, and alerts for the web when connected to supported data sources. It supports multiple data sources and offers beautiful, customizable dashboards for monitoring and observability.",
   category: "Monitoring",
   logo: "https://raw.githubusercontent.com/grafana/grafana/main/public/img/grafana_icon.svg",
   version: "latest",

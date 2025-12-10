@@ -626,24 +626,24 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-50">
+    <div className="relative min-h-screen bg-background">
       <div className="relative max-w-7xl mx-auto px-6 py-8 space-y-6">
-        <div className="flex items-center gap-3 text-slate-800">
+        <div className="flex items-center gap-3 text-card-foreground">
           <button
             onClick={onBack}
-            className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-base font-medium text-slate-800 border border-slate-200 hover:bg-slate-100 transition"
+            className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-1.5 text-base font-medium text-card-foreground border border-border hover:bg-accent transition"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             Back to apps
           </button>
-          <span className="text-sm uppercase tracking-[0.2em] text-slate-500">Configure &amp; launch</span>
+          <span className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Configure &amp; launch</span>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
               <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex items-center gap-3">
@@ -654,50 +654,50 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                       </div>
                     )}
                     <div>
-                      <h1 className="text-2xl font-semibold text-slate-900">{app.name}</h1>
-                      <p className="text-base text-slate-600">{app.description}</p>
+                      <h1 className="text-2xl font-semibold text-card-foreground">{app.name}</h1>
+                      <p className="text-base text-muted-foreground">{app.description}</p>
                     </div>
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-600">
-                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 border border-emerald-200">
+                  <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
+                    <span className="rounded-full bg-accent px-3 py-1 text-primary border border-border">
                       {app.category}
                     </span>
                     {versionLabel && (
-                      <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700 border border-blue-200">{versionLabel}</span>
+                      <span className="rounded-full bg-accent px-3 py-1 text-primary border border-border">{versionLabel}</span>
                     )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:w-64">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-left">
-                    <p className="text-sm uppercase tracking-wide text-slate-500">Services</p>
-                    <p className="text-xl font-semibold text-slate-900">
+                  <div className="rounded-xl border border-border bg-muted p-3 text-left">
+                    <p className="text-sm uppercase tracking-wide text-muted-foreground">Services</p>
+                    <p className="text-xl font-semibold text-card-foreground">
                       {Object.values(serviceConfigs).filter(cfg => cfg.enabled).length}/{app.services?.length || 0}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-left">
-                    <p className="text-sm uppercase tracking-wide text-slate-500">Network</p>
-                    <p className="text-base font-medium text-slate-900 truncate">{networkConfig.enabled ? networkConfig.name : 'Disabled'}</p>
+                  <div className="rounded-xl border border-border bg-muted p-3 text-left">
+                    <p className="text-sm uppercase tracking-wide text-muted-foreground">Network</p>
+                    <p className="text-base font-medium text-card-foreground truncate">{networkConfig.enabled ? networkConfig.name : 'Disabled'}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-900">Services Configuration</h3>
+              <h3 className="text-lg font-semibold text-card-foreground">Services Configuration</h3>
               <div className="flex gap-3">
                 <button
                   onClick={() => {
                     const allExpanded = app.services?.reduce((acc, s) => ({ ...acc, [s.name]: true }), {}) || {};
                     setExpandedServices(allExpanded);
                   }}
-                  className="text-sm font-medium text-purple-600 hover:text-purple-700"
+                  className="text-sm font-medium text-primary hover:text-primary/80"
                 >
                   Expand All
                 </button>
-                <span className="text-slate-300">|</span>
+                <span className="text-border">|</span>
                 <button
                   onClick={() => setExpandedServices({})}
-                  className="text-sm font-medium text-slate-500 hover:text-slate-700"
+                  className="text-sm font-medium text-muted-foreground hover:text-card-foreground"
                 >
                   Collapse All
                 </button>
@@ -718,20 +718,20 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                 return (
                   <div 
                     key={service.name} 
-                    className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-200 
-                      ${isMandatory ? 'border-blue-200 ring-1 ring-blue-50' : 'border-slate-200'} 
+                    className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition-all duration-200 
+                      ${isMandatory ? 'border-primary ring-1 ring-primary/10' : 'border-border'} 
                       ${!isEnabled && !isMandatory ? 'opacity-75 grayscale-[0.5]' : ''}
                     `}
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
                       <div className="flex items-center gap-3 flex-1">
                         {config.enabled && (
                           <button
                             onClick={() => toggleServiceExpanded(service.name)}
-                            className="p-1 rounded-md hover:bg-slate-100 transition-colors"
+                            className="p-1 rounded-md hover:bg-accent transition-colors"
                             aria-label={expandedServices[service.name] ? 'Collapse' : 'Expand'}
                           >
-                            <svg className="w-5 h-5 text-slate-600 transition-transform" style={{ transform: expandedServices[service.name] ? 'rotate(180deg)' : 'rotate(0deg)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 text-muted-foreground transition-transform" style={{ transform: expandedServices[service.name] ? 'rotate(180deg)' : 'rotate(0deg)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
                           </button>
@@ -745,30 +745,30 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                               className="h-8 w-8 object-contain"
                             />
                           ) : (
-                            <span className="text-sm font-semibold text-slate-800">
+                            <span className="text-sm font-semibold text-card-foreground">
                               {(service.displayName || service.name).charAt(0).toUpperCase()}
                             </span>
                           )}
                         </div>
                         <div>
-                          <h2 className="text-lg font-semibold text-slate-900 capitalize">{service.displayName || service.name}</h2>
+                          <h2 className="text-lg font-semibold text-card-foreground capitalize">{service.displayName || service.name}</h2>
                           {service.description && !expandedServices[service.name] && (
-                            <p className="text-sm text-slate-600">{service.description}</p>
+                            <p className="text-sm text-muted-foreground">{service.description}</p>
                           )}
                           {!expandedServices[service.name] && config.enabled && (
                             <div className="flex flex-wrap gap-2 mt-1">
                               {config.portsEnabled && config.ports.length > 0 && (
-                                <span className="inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                                <span className="inline-flex items-center rounded-md bg-accent px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/10">
                                   Ports: {config.ports.length}
                                 </span>
                               )}
                               {config.volumesEnabled && config.volumes.length > 0 && (
-                                <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                                <span className="inline-flex items-center rounded-md bg-accent px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">
                                   Volumes: {config.volumes.length}
                                 </span>
                               )}
                               {config.restartPolicyEnabled && (
-                                <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                                <span className="inline-flex items-center rounded-md bg-accent px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">
                                   Restart: {config.restartPolicy}
                                 </span>
                               )}
@@ -776,12 +776,12 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                           )}
                         </div>
                         {service.mandatory && (
-                          <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700 border border-blue-200">
+                          <span className="rounded-full bg-accent px-3 py-1 text-sm font-semibold text-primary border border-border">
                             Required
                           </span>
                         )}
                         {service.group && service.group !== 'npm-flavor' && (
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 border border-slate-200">
+                          <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground border border-border">
                             {service.group}
                           </span>
                         )}
@@ -795,13 +795,12 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                             onChange={(e) => updateServiceConfig(service.name, { enabled: e.target.checked })}
                             className="peer sr-only"
                           />
-                          <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
+                          <div className="h-7 w-14 rounded-full bg-muted border border-border transition peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-ring after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-background after:shadow after:transition peer-checked:after:translate-x-6" />
                         </label>
                       )}
                     </div>
-
                     {config.enabled && expandedServices[service.name] && (
-                      <div className="space-y-6 px-5 py-5 bg-slate-50">
+                      <div className="space-y-6 px-5 py-5 bg-muted/50">
                         {hasImage && (
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div className="space-y-2">
