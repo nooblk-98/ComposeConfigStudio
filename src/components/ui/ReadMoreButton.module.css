@@ -1,0 +1,32 @@
+.link {
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  text-decoration: none;
+  position: relative;
+  font-family: "Poppins", sans-serif;
+}
+
+.link span,
+.link i {
+  position: relative;
+}
+
+.link i {
+  margin-left: 0.5em;
+}
+
+.link svg {
+  margin-left: 0.5em;
+}
+
+.link .color {
+  width: 2em;
+  height: 2em;
+  border-radius: 2em;
+  background-color: var(--color);
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: -0.65em;
+}

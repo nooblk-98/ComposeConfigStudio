@@ -4,9 +4,9 @@ import variant2 from './variant2.js';
 export default {
   id: "wordpress",
   name: "wordpress",
-  description: "Popular CMS platform for websites and blogs",
+  description: "WordPress is a powerful, open-source content management system (CMS) that enables users to create and manage websites, blogs, e-commerce stores, and more. It features a user-friendly interface, thousands of plugins for extended functionality, customizable themes, and strong community support.",
   category: "CMS",
-  logo: "https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/wordpress.svg",
+  logo: "/images/Wordpress.mp4",
   version: "latest",
   defaultPort: 80,
   databases: ["mysql", "mariadb"],

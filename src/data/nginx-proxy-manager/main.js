@@ -5,9 +5,9 @@ import variant3 from './variant3.js';
 export default {
   id: "nginx-proxy-manager",
   name: "Nginx Proxy Manager",
-  description: "Easy-to-use reverse proxy management with SSL support",
+  description: "Nginx Proxy Manager is an easy-to-use web-based interface for managing Nginx proxy hosts, SSL certificates, and access lists. It simplifies reverse proxy setup with automatic SSL from Let's Encrypt, making it ideal for self-hosted applications.",
   category: "Networking",
-  logo: "https://nginxproxymanager.com/logo.svg",
+  logo: "/images/nginx.png",
   version: "latest",
   defaultPort: 81,
   databases: ["sqlite", "mysql", "mariadb", "postgres"],

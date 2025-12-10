@@ -5,9 +5,9 @@ import variant3 from './variant3.js';
 export default {
   id: "n8n",
   name: "n8n",
-  description: "Workflow automation tool with a visual editor",
+  description: "n8n is a free and open-source workflow automation tool that allows users to automate tasks and workflows using a visual drag-and-drop interface. It integrates with hundreds of apps and services, enabling no-code automation for productivity and business processes.",
   category: "Automation",
-  logo: "https://n8n.io/favicon.ico",
+  logo: "/images/n8n.png",
   version: "latest",
   defaultPort: 5678,
   databases: [],

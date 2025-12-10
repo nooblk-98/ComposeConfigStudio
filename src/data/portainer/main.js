@@ -5,9 +5,9 @@ import variant3 from './variant3.js';
 export default {
   id: "portainer",
   name: "Portainer",
-  description: "Popular Docker container management UI",
+  description: "Portainer is a lightweight, open-source management UI for Docker environments. It provides an easy-to-use web interface for managing containers, images, networks, and volumes, making Docker administration accessible to users of all skill levels.",
   category: "Management",
-  logo: "https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/portainer.svg",
+  logo: "/images/portainer.png",
   version: "latest",
   defaultPort: 9443,
   databases: [],

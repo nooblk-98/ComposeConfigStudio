@@ -1,9 +1,9 @@
 export default {
   id: "uptime-kuma",
   name: "Uptime Kuma",
-  description: "Self-hosted monitoring tool like Uptime Robot",
+  description: "Uptime Kuma is a self-hosted monitoring tool that allows you to monitor your websites, APIs, and services with beautiful status pages and notifications. It offers features similar to Uptime Robot, including uptime monitoring, response time tracking, and alerting via various channels.",
   category: "Monitoring",
-  logo: "https://uptime.kuma.pet/img/icon.svg",
+  logo: "/images/uptime-kuma.png",
   version: "latest",
   defaultPort: 3001,
   databases: ["sqlite"],
