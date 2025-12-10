@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { AppDefinition } from '@/types/app';
 import AppCard from './common/AppCard';
+import { BackgroundBeams } from './ui/background-beams';
 
 interface AppListProps {
   apps: AppDefinition[];
@@ -125,7 +126,7 @@ export default function AppList({ apps, onSelectApp }: AppListProps) {
   );
 
   return (
-    <div className="relative min-h-screen bg-background text-foreground">
+    <div className="relative min-h-screen bg-background text-foreground z-10">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* <div className="flex items-center justify-between mb-4 lg:hidden">
           <h1 className="text-2xl font-bold text-slate-900">Docker Apps</h1>
@@ -175,6 +176,7 @@ export default function AppList({ apps, onSelectApp }: AppListProps) {
           </main>
         </div>
       </div>
+      <BackgroundBeams />
     </div>
   );
 }

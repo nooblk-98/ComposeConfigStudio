@@ -17,7 +17,7 @@ export default function AppCard({ app, onSelectApp, showDetails }: AppCardProps)
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="relative bg-card/10 border border-border hover:border-primary hover:shadow-2xl hover:backdrop-blur-sm focus:ring-2 focus:ring-ring focus:outline-none rounded-2xl p-8 sm:p-10 text-left transition-all duration-300 group shadow-md transform hover:-translate-y-1 overflow-hidden cursor-pointer min-h-[280px]"
+      className="relative bg-card/10 backdrop-blur-lg border border-border hover:border-primary hover:shadow-2xl hover:backdrop-blur-sm focus:ring-2 focus:ring-ring focus:outline-none rounded-2xl p-8 sm:p-10 text-left transition-all duration-300 group shadow-md transform hover:-translate-y-1 overflow-hidden cursor-pointer min-h-[280px] z-30"
     >
       <div className="flex items-start gap-4 relative z-20">
         <div className="w-12 h-12 sm:w-14 sm:h-14 bg-accent rounded-xl flex items-center justify-center text-primary text-xl font-bold flex-shrink-0 group-hover:scale-110 group-hover:ring-2 group-hover:ring-ring transition-all duration-300 overflow-hidden border border-border">
@@ -75,7 +75,7 @@ export default function AppCard({ app, onSelectApp, showDetails }: AppCardProps)
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="h-full w-full absolute inset-0"
+            className="h-full w-full absolute inset-0 pointer-events-none"
           >
             <CanvasRevealEffect
               animationSpeed={5}
