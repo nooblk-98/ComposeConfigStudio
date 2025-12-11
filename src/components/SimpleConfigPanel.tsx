@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Button, Card, Space, Tag, Typography, Tooltip as AntTooltip } from 'antd';
-import { ArrowLeftOutlined, CloudDownloadOutlined, CopyOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { Button, Card, Space, Switch, Tag, Typography, Tooltip as AntTooltip } from 'antd';
+import { ArrowLeftOutlined, CloudDownloadOutlined, CopyOutlined, InfoCircleOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { AppDefinition, ServiceDefinition } from '@/types/app';
 
 interface SimpleConfigPanelProps {
@@ -716,15 +716,11 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
                       <div className="flex items-center gap-3 flex-1">
                         {config.enabled && (
-                          <button
+                          <Button
+                            type="text"
                             onClick={() => toggleServiceExpanded(service.name)}
-                            className="p-1 rounded-md hover:bg-slate-100 transition-colors"
-                            aria-label={expandedServices[service.name] ? 'Collapse' : 'Expand'}
-                          >
-                            <svg className="w-5 h-5 text-slate-600 transition-transform" style={{ transform: expandedServices[service.name] ? 'rotate(180deg)' : 'rotate(0deg)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
+                            icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transform: expandedServices[service.name] ? 'rotate(180deg)' : 'rotate(0deg)' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>}
+                          />
                         )}
                         <div className="h-10 w-10 flex items-center justify-center overflow-hidden">
                           {iconUrl ? (
@@ -778,15 +774,12 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                       </div>
 
                       {!service.mandatory && !service.group && (
-                        <label className="relative inline-flex cursor-pointer items-center">
-                          <input
-                            type="checkbox"
-                            checked={config.enabled}
-                            onChange={(e) => updateServiceConfig(service.name, { enabled: e.target.checked })}
-                            className="peer sr-only"
-                          />
-                          <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
-                        </label>
+                        <Switch
+                          checked={config.enabled}
+                          onChange={(checked) => updateServiceConfig(service.name, { enabled: checked })}
+                          checkedChildren={<CheckOutlined />}
+                          unCheckedChildren={<CloseOutlined />}
+                        />
                       )}
                     </div>
 
@@ -1007,15 +1000,12 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                   </div>
                                   <p className="text-sm text-slate-500">Expose container ports to the host</p>
                                 </div>
-                                <label className="relative inline-flex cursor-pointer items-center">
-                                  <input
-                                    type="checkbox"
-                                    checked={config.portsEnabled}
-                                    onChange={(e) => updateServiceConfig(service.name, { portsEnabled: e.target.checked })}
-                                    className="peer sr-only"
-                                  />
-                                  <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
-                                </label>
+                                <Switch
+                                  checked={config.portsEnabled}
+                                  onChange={(checked) => updateServiceConfig(service.name, { portsEnabled: checked })}
+                                  checkedChildren={<CheckOutlined />}
+                                  unCheckedChildren={<CloseOutlined />}
+                                />
                               </div>
                               {config.portsEnabled && config.ports.length > 0 && (
                                 <div className="mb-3 flex items-center justify-end">
@@ -1147,15 +1137,12 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                               <div className="mb-3 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                   <span className="text-base font-semibold text-slate-900">Volumes</span>
-                                  <label className="relative inline-flex cursor-pointer items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={config.volumesEnabled}
-                                      onChange={(e) => updateServiceConfig(service.name, { volumesEnabled: e.target.checked })}
-                                      className="peer sr-only"
-                                    />
-                                    <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
-                                  </label>
+                                  <Switch
+                                    checked={config.volumesEnabled}
+                                    onChange={(checked) => updateServiceConfig(service.name, { volumesEnabled: checked })}
+                                    checkedChildren={<CheckOutlined />}
+                                    unCheckedChildren={<CloseOutlined />}
+                                  />
                                 </div>
                                 <button
                                   type="button"
@@ -1234,15 +1221,12 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                   <span className="text-base font-semibold text-slate-900">Resource limits</span>
                                   <p className="text-sm text-slate-500">Optional CPU/Memory caps for this container.</p>
                                 </div>
-                                <label className="relative inline-flex cursor-pointer items-center">
-                                  <input
-                                    type="checkbox"
-                                    checked={config.resourceLimits.enabled}
-                                    onChange={(e) => updateServiceConfig(service.name, { resourceLimits: { ...config.resourceLimits, enabled: e.target.checked } })}
-                                    className="peer sr-only"
-                                  />
-                                  <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
-                                </label>
+                                <Switch
+                                  checked={config.resourceLimits.enabled}
+                                  onChange={(checked) => updateServiceConfig(service.name, { resourceLimits: { ...config.resourceLimits, enabled: checked } })}
+                                  checkedChildren={<CheckOutlined />}
+                                  unCheckedChildren={<CloseOutlined />}
+                                />
                               </div>
                               {config.resourceLimits.enabled && (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1281,15 +1265,12 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                                   </div>
                                   <p className="text-sm text-slate-500">Control container restart behavior</p>
                                 </div>
-                                <label className="relative inline-flex cursor-pointer items-center">
-                                  <input
-                                    type="checkbox"
-                                    checked={config.restartPolicyEnabled}
-                                    onChange={(e) => updateServiceConfig(service.name, { restartPolicyEnabled: e.target.checked })}
-                                    className="peer sr-only"
-                                  />
-                                  <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
-                                </label>
+                                <Switch
+                                  checked={config.restartPolicyEnabled}
+                                  onChange={(checked) => updateServiceConfig(service.name, { restartPolicyEnabled: checked })}
+                                  checkedChildren={<CheckOutlined />}
+                                  unCheckedChildren={<CloseOutlined />}
+                                />
                               </div>
                               {config.restartPolicyEnabled ? (
                                 <div className="space-y-1">
@@ -1342,16 +1323,12 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                     )}
                   </div>
                 </div>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    checked={networkConfig.enabled}
-                    onChange={(e) => setNetworkConfig(prev => ({ ...prev, enabled: e.target.checked }))}
-                    className="peer sr-only"
-                  />
-
-                  <div className="h-7 w-14 rounded-full bg-slate-200 border border-slate-300 transition peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-200 after:absolute after:start-[6px] after:top-[5px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
-                </label>
+                <Switch
+                  checked={networkConfig.enabled}
+                  onChange={(checked) => setNetworkConfig(prev => ({ ...prev, enabled: checked }))}
+                  checkedChildren={<CheckOutlined />}
+                  unCheckedChildren={<CloseOutlined />}
+                />
               </div>
 
               {networkConfig.enabled && networkExpanded && (
