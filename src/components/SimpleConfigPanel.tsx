@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { Button, Card, Space, Tag, Typography, Tooltip as AntTooltip } from 'antd';
+import { ArrowLeftOutlined, CloudDownloadOutlined, CopyOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { AppDefinition, ServiceDefinition } from '@/types/app';
 
 interface SimpleConfigPanelProps {
@@ -29,20 +31,14 @@ interface ServiceConfig {
 const DOCKER_ICON = 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-plain.svg';
 
 const Tooltip = ({ content, children }: { content: string; children: React.ReactNode }) => (
-  <div className="group relative inline-block">
+  <AntTooltip title={content} color="#1f1f1f">
     {children}
-    <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-800 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 z-10">
-      {content}
-      <div className="absolute left-1/2 top-full -mt-1 h-2 w-2 -translate-x-1/2 rotate-45 bg-slate-800"></div>
-    </div>
-  </div>
+  </AntTooltip>
 );
 
 const InfoIcon = ({ content }: { content: string }) => (
   <Tooltip content={content}>
-    <svg className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
+    <InfoCircleOutlined style={{ color: '#8c8c8c' }} />
   </Tooltip>
 );
 
@@ -628,23 +624,19 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
   return (
     <div className="relative min-h-screen bg-slate-50">
       <div className="relative max-w-7xl mx-auto px-6 py-8 space-y-6">
-        <div className="flex items-center gap-3 text-slate-800">
-          <button
-            onClick={onBack}
-            className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-base font-medium text-slate-800 border border-slate-200 hover:bg-slate-100 transition"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
+        <Space align="center" size={10} className="text-slate-800">
+          <Button type="link" icon={<ArrowLeftOutlined />} onClick={onBack} style={{ paddingLeft: 0 }}>
             Back to apps
-          </button>
-          <span className="text-sm uppercase tracking-[0.2em] text-slate-500">Configure &amp; launch</span>
-        </div>
+          </Button>
+          <Typography.Text type="secondary" style={{ letterSpacing: '0.25em', textTransform: 'uppercase' }}>
+            Configure &amp; launch
+          </Typography.Text>
+        </Space>
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <Card>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex items-center gap-3">
                     {app.logo && (
@@ -654,33 +646,31 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                       </div>
                     )}
                     <div>
-                      <h1 className="text-2xl font-semibold text-slate-900">{app.name}</h1>
-                      <p className="text-base text-slate-600">{app.description}</p>
+                      <Typography.Title level={3} style={{ margin: 0 }}>
+                        {app.name}
+                      </Typography.Title>
+                      <Typography.Text type="secondary">{app.description}</Typography.Text>
                     </div>
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-600">
-                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 border border-emerald-200">
-                      {app.category}
-                    </span>
-                    {versionLabel && (
-                      <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700 border border-blue-200">{versionLabel}</span>
-                    )}
-                  </div>
+                  <Space wrap style={{ marginTop: 12 }}>
+                    <Tag color="green">{app.category}</Tag>
+                    {versionLabel && <Tag color="blue">{versionLabel}</Tag>}
+                  </Space>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:w-64">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-left">
-                    <p className="text-sm uppercase tracking-wide text-slate-500">Services</p>
-                    <p className="text-xl font-semibold text-slate-900">
+                  <Card size="small" bordered>
+                    <Typography.Text type="secondary">Services</Typography.Text>
+                    <Typography.Title level={4} style={{ margin: 0 }}>
                       {Object.values(serviceConfigs).filter(cfg => cfg.enabled).length}/{app.services?.length || 0}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-left">
-                    <p className="text-sm uppercase tracking-wide text-slate-500">Network</p>
-                    <p className="text-base font-medium text-slate-900 truncate">{networkConfig.enabled ? networkConfig.name : 'Disabled'}</p>
-                  </div>
+                    </Typography.Title>
+                  </Card>
+                  <Card size="small" bordered>
+                    <Typography.Text type="secondary">Network</Typography.Text>
+                    <Typography.Text strong>{networkConfig.enabled ? networkConfig.name : 'Disabled'}</Typography.Text>
+                  </Card>
                 </div>
               </div>
-            </div>
+            </Card>
 
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-slate-900">Services Configuration</h3>
@@ -1449,25 +1439,15 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
 
           <div className="lg:col-span-1">
             <div className="sticky top-6 space-y-4">
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="px-3 py-3">
-                  <span className="inline-flex items-center rounded-xl bg-purple-600 text-white text-sm font-semibold px-3 py-2">
-                    Docker Compose
-                  </span>
-                </div>
-                <div className="relative max-h-[70vh] overflow-auto border-t border-slate-800 bg-slate-900 px-4 py-5">
-                  <div className="absolute right-4 top-4 flex items-center gap-2">
-                    <button
-                      onClick={downloadCompose}
-                      className="rounded-lg border border-slate-700 bg-slate-800 p-2 text-slate-400 hover:bg-slate-700 hover:text-slate-200 transition-colors"
-                      title="Download docker-compose.yml"
-                    >
-                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v14m0 0-4-4m4 4 4-4" />
-                      </svg>
-                    </button>
-                    <button
+              <Card
+                title={<Tag color="purple" style={{ marginRight: 0 }}>Docker Compose</Tag>}
+                extra={
+                  <Space>
+                    <Button icon={<CloudDownloadOutlined />} onClick={downloadCompose}>
+                      Download
+                    </Button>
+                    <Button
+                      icon={<CopyOutlined />}
                       onClick={() => {
                         const text = generateDockerCompose();
                         if (text.trim().length > 0) {
@@ -1477,32 +1457,30 @@ export default function SimpleConfigPanel({ app, onBack }: SimpleConfigPanelProp
                           });
                         }
                       }}
-                      className="rounded-lg border border-slate-700 bg-slate-800 p-2 text-slate-400 hover:bg-slate-700 hover:text-slate-200 transition-colors"
-                      title="Copy to clipboard"
                     >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </button>
-                  </div>
+                      {copied ? 'Copied' : 'Copy'}
+                    </Button>
+                  </Space>
+                }
+              >
+                <div className="relative max-h-[70vh] overflow-auto border border-slate-800 bg-slate-900 px-4 py-5 rounded-lg">
                   <pre className="whitespace-pre-wrap break-words text-sm font-mono leading-relaxed text-emerald-400 pr-10">
                     {generateDockerCompose()}
                   </pre>
                   {copied && (
-                    <div className="absolute right-4 top-14 rounded-full bg-emerald-900/30 px-3 py-1 text-sm font-semibold text-emerald-400 border border-emerald-800/50 backdrop-blur-sm">
+                    <div className="absolute right-4 top-4 rounded-full bg-emerald-900/30 px-3 py-1 text-sm font-semibold text-emerald-400 border border-emerald-800/50 backdrop-blur-sm">
                       Copied
                     </div>
                   )}
                 </div>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 text-base text-slate-700 shadow-sm">
-                <h4 className="mb-2 text-base font-semibold text-slate-900">Tips</h4>
+              </Card>
+              <Card title="Tips">
                 <ul className="list-disc space-y-1 pl-4 text-sm text-slate-600">
                   <li>Toggle services to include only what you need.</li>
                   <li>Network name is reused in both docker run and compose outputs.</li>
                   <li>Use the copy button to quickly grab the selected output.</li>
                 </ul>
-              </div>
+              </Card>
             </div>
           </div>
         </div>

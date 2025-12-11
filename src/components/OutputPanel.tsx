@@ -2,6 +2,8 @@
 
 import React, { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import { Alert, Button, Card, Space, Tabs, message } from 'antd';
+import { CopyOutlined, EditOutlined, SaveOutlined } from '@ant-design/icons';
 import { AppDefinition, AppConfig } from '@/types/app';
 import { generateDockerCompose, generateDockerRun } from '@/utils/dockerGenerator';
 import { parseComposePartial } from '../utils/composeParser';
@@ -20,6 +22,7 @@ export default function OutputPanel({ app, config, updateConfig }: OutputPanelPr
   const [editable, setEditable] = useState(false);
   const [composeDraft, setComposeDraft] = useState('');
   const [parseError, setParseError] = useState<string | null>(null);
+  const [messageApi, contextHolder] = message.useMessage();
 
   const dockerCompose = useMemo(() => {
     const generated = generateDockerCompose(app, config);
@@ -36,6 +39,7 @@ export default function OutputPanel({ app, config, updateConfig }: OutputPanelPr
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      messageApi.success('Copied to clipboard');
     });
   };
 
@@ -99,77 +103,53 @@ export default function OutputPanel({ app, config, updateConfig }: OutputPanelPr
   };
 
   return (
-    <div className="w-1/2 bg-white border-l border-gray-200 flex flex-col">
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200">
-        <button
-          onClick={() => setActiveTab('command')}
-          className={`px-6 py-3 font-bold text-sm transition-colors ${
-            activeTab === 'command'
-              ? 'text-purple-600 bg-purple-50 border-b-2 border-purple-600'
-              : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-          }`}
-        >
-          Docker command
-        </button>
-        <button
-          onClick={() => setActiveTab('compose')}
-          className={`px-6 py-3 font-bold text-sm transition-colors ${
-            activeTab === 'compose'
-              ? 'text-purple-600 bg-purple-50 border-b-2 border-purple-600'
-              : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-          }`}
-        >
-          Docker Compose
-        </button>
-      </div>
+    <Card
+      className="w-1/2 flex flex-col"
+      bodyStyle={{ padding: 0, height: '100%' }}
+      style={{ borderLeft: '1px solid #f0f0f0' }}
+    >
+      {contextHolder}
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => setActiveTab(key as 'command' | 'compose')}
+        items={[
+          { key: 'compose', label: 'Docker Compose' },
+          { key: 'command', label: 'Docker command' },
+        ]}
+      />
 
-      {/* Action Bar */}
-      <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-wrap gap-3 justify-between items-center">
-        <div className="flex gap-2">
-          <button
-            onClick={copyToClipboard}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg shadow-sm transition-all flex items-center gap-2"
-          >
-            {copied ? (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Copied!
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                Copy
-              </>
-            )}
-          </button>
+      <div style={{ padding: 12, background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
+        <Space wrap>
+          <Button type="primary" icon={<CopyOutlined />} onClick={copyToClipboard}>
+            {copied ? 'Copied!' : 'Copy'}
+          </Button>
           {activeTab === 'compose' && (
             <>
-              <button
+              <Button
+                icon={<EditOutlined />}
                 onClick={() => { setEditable(e => !e); setComposeDraft(dockerCompose); setParseError(null); }}
-                className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg text-sm shadow-sm transition-all"
               >
                 {editable ? 'Cancel edit' : 'Edit YAML'}
-              </button>
+              </Button>
               {editable && (
-                <button
-                  onClick={handleSaveCompose}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg text-sm shadow-sm transition-all"
-                >
+                <Button type="primary" icon={<SaveOutlined />} onClick={handleSaveCompose}>
                   Save YAML
-                </button>
+                </Button>
               )}
             </>
           )}
-        </div>
-        {parseError && <div className="text-red-500 text-xs font-medium bg-red-50 px-2 py-1 rounded border border-red-200">{parseError}</div>}
+        </Space>
+        {parseError && (
+          <Alert
+            style={{ marginTop: 12 }}
+            type="error"
+            showIcon
+            message="Failed to parse YAML"
+            description={parseError}
+          />
+        )}
       </div>
 
-      {/* Editor */}
       <div className="flex-1 overflow-hidden">
         {activeTab === 'compose' ? (
           <Editor
@@ -206,6 +186,6 @@ export default function OutputPanel({ app, config, updateConfig }: OutputPanelPr
           />
         )}
       </div>
-    </div>
+    </Card>
   );
 }

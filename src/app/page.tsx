@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Spin, Typography } from 'antd';
 import { AppDefinition } from '@/types/app';
 import AppList from '@/components/AppList';
 
@@ -24,16 +25,15 @@ export default function Home() {
   }, []);
 
   const handleSelectApp = async (app: AppDefinition) => {
-    // Navigate to the app's detail page
     router.push(`/app/${app.id}`);
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <div className="text-xl text-gray-700">Loading applications...</div>
+      <div className="flex items-center justify-center h-screen bg-white">
+        <div className="flex flex-col items-center gap-3">
+          <Spin size="large" />
+          <Typography.Text type="secondary">Loading applications...</Typography.Text>
         </div>
       </div>
     );

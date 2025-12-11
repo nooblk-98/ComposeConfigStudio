@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ArrowLeftOutlined, RightOutlined } from '@ant-design/icons';
+import { Button, Card, List, Result, Space, Spin, Typography } from 'antd';
 import { AppDefinition } from '@/types/app';
 
 export default function AppDetailPage({ params }: { params: { appId: string } }) {
@@ -31,85 +33,89 @@ export default function AppDetailPage({ params }: { params: { appId: string } })
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <div className="text-xl text-gray-700">Loading configuration...</div>
-        </div>
+      <div className="flex items-center justify-center h-screen bg-white">
+        <Spin tip="Loading configuration..." size="large" />
       </div>
     );
   }
 
   if (!app) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="text-center">
-          <div className="text-xl text-gray-700">App not found</div>
-          <button
-            onClick={() => router.push('/')}
-            className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-          >
+      <Result
+        status="404"
+        title="App not found"
+        extra={
+          <Button type="primary" onClick={() => router.push('/')}>
             Back to Apps
-          </button>
-        </div>
-      </div>
+          </Button>
+        }
+      />
     );
   }
 
-  // Show variant selector
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
+    <div className="min-h-screen bg-slate-50 p-6 sm:p-8">
       <div className="max-w-4xl mx-auto">
-        <button
+        <Button
+          type="link"
+          icon={<ArrowLeftOutlined />}
           onClick={() => router.push('/')}
-          className="mb-6 flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+          style={{ paddingLeft: 0 }}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
           Back to apps
-        </button>
+        </Button>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-          <div className="flex items-center gap-4 mb-6">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={app.logo} alt={app.name} className="w-16 h-16 object-contain" />
+        <Card
+          style={{ marginTop: 16 }}
+          title={
+            <Space align="center" size="middle">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={app.logo} alt={app.name} style={{ width: 48, height: 48, objectFit: 'contain' }} />
+              <div>
+                <Typography.Title level={3} style={{ margin: 0 }}>
+                  {app.name}
+                </Typography.Title>
+                <Typography.Text type="secondary">{app.description}</Typography.Text>
+              </div>
+            </Space>
+          }
+        >
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">{app.name}</h1>
-              <p className="text-slate-600 mt-1">{app.description}</p>
+              <Typography.Title level={4} style={{ marginBottom: 4 }}>
+                Choose Configuration
+              </Typography.Title>
+              <Typography.Text type="secondary">Select the setup for your deployment</Typography.Text>
             </div>
-          </div>
-
-          <div className="border-t border-slate-200 pt-6">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">Choose Configuration</h2>
-            <p className="text-slate-600 mb-6">Select the setup for your deployment</p>
-
-            <div className="grid gap-4">
-              {app.variants?.map((variant) => (
-                <button
-                  key={variant.id}
-                  onClick={() => router.push(`/app/${params.appId}/${encodeURIComponent(variant.id)}`)}
-                  className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all text-left group"
+            <List
+              itemLayout="horizontal"
+              dataSource={app.variants || []}
+              renderItem={(variant) => (
+                <List.Item
+                  actions={[
+                    <Button
+                      key="configure"
+                      type="primary"
+                      icon={<RightOutlined />}
+                      onClick={() => router.push(`/app/${params.appId}/${encodeURIComponent(variant.id)}`)}
+                    >
+                      Configure
+                    </Button>
+                  ]}
                 >
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900 group-hover:text-purple-700">
-                      {variant.label}
-                    </h3>
-                    <p className="text-sm text-slate-600 mt-1">{variant.config.description}</p>
-                  </div>
-                  <svg
-                    className="w-6 h-6 text-slate-400 group-hover:text-purple-600 transition-colors"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+                  <List.Item.Meta
+                    title={
+                      <Typography.Title level={5} style={{ margin: 0 }}>
+                        {variant.label}
+                      </Typography.Title>
+                    }
+                    description={<Typography.Text type="secondary">{variant.config.description}</Typography.Text>}
+                  />
+                </List.Item>
+              )}
+            />
+          </Space>
+        </Card>
       </div>
     </div>
   );

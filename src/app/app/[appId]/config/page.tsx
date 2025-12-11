@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button, Result, Spin } from 'antd';
 import { AppDefinition } from '@/types/app';
 import SimpleConfigPanel from '@/components/SimpleConfigPanel';
 import ConfigPanel from '@/components/ConfigPanel';
@@ -38,28 +39,23 @@ export default function AppConfigPage({ params }: { params: { appId: string } })
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <div className="text-xl text-gray-700">Loading configuration...</div>
-        </div>
+      <div className="flex items-center justify-center h-screen bg-white">
+        <Spin size="large" tip="Loading configuration..." />
       </div>
     );
   }
 
   if (!app) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="text-center">
-          <div className="text-xl text-gray-700">Configuration not found</div>
-          <button
-            onClick={() => router.push('/')}
-            className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-          >
+      <Result
+        status="404"
+        title="Configuration not found"
+        extra={
+          <Button type="primary" onClick={() => router.push('/')}>
             Back to Apps
-          </button>
-        </div>
-      </div>
+          </Button>
+        }
+      />
     );
   }
 
